@@ -510,7 +510,7 @@ void GUI::textURL(const std::string& text, const std::string& link)
 		return;
 
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.3f, 1, 1));
-	ImGui::Text(text.c_str());
+	ImGui::Text("%s", text.c_str());
 	ImGui::PopStyleColor();
 	if (ImGui::IsItemHovered())
 	{
