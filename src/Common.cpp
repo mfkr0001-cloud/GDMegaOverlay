@@ -1,6 +1,6 @@
 
 #include "Common.h"
-#include "Hacks/AudioChannelControl.h"
+#include "hacks/AudioChannelControl.h"
 #include "Macrobot/Macrobot.h"
 #include "util.hpp"
 #include "Settings.hpp"
