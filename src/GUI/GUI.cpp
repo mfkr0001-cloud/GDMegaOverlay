@@ -1,3 +1,4 @@
+#include <filesystem>
 #include "GUI.h"
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
@@ -133,29 +134,29 @@ void GUI::init()
 	
 	windowPositions = json::object();
 
-	ghc::filesystem::path defaultStylePath = Mod::get()->getSaveDir() / "styles" / "default.style";
-	ghc::filesystem::copy(Mod::get()->getResourcesDir() / "Style.style", defaultStylePath, ghc::filesystem::copy_options::overwrite_existing);
+	std::filesystem::path defaultStylePath = Mod::get()->getSaveDir() / "styles" / "default.style";
+	std::filesystem::copy(Mod::get()->getResourcesDir() / "Style.style", defaultStylePath, std::filesystem::copy_options::overwrite_existing);
 
-	ghc::filesystem::path defaultFontPath = Mod::get()->getSaveDir() / "fonts" / "Roboto-Regular.ttf";
-	ghc::filesystem::copy(Mod::get()->getResourcesDir() / "Roboto-Regular.ttf", defaultFontPath, ghc::filesystem::copy_options::overwrite_existing);
+	std::filesystem::path defaultFontPath = Mod::get()->getSaveDir() / "fonts" / "Roboto-Regular.ttf";
+	std::filesystem::copy(Mod::get()->getResourcesDir() / "Roboto-Regular.ttf", defaultFontPath, std::filesystem::copy_options::overwrite_existing);
 
 	styleCombo = DirectoryCombo("Style", Mod::get()->getSaveDir() / "styles", "menu/style_path");
 	fontCombo = DirectoryCombo("Font", Mod::get()->getSaveDir() / "fonts", "menu/font_path");
 
-	std::string fontPath = Settings::get<std::string>("menu/font_path", string::wideToUtf8(defaultFontPath.wstring()));
+	std::string fontPath = Settings::get<std::string>("menu/font_path", defaultFontPath.string());
 	
-	if(fontPath.empty() || !ghc::filesystem::exists(fontPath))
-		fontPath = string::wideToUtf8(defaultFontPath.wstring());
+	if(fontPath.empty() || !std::filesystem::exists(fontPath))
+		fontPath = defaultFontPath.string();
 
-	std::string stylePath = Settings::get<std::string>("menu/style_path", string::wideToUtf8(defaultStylePath.wstring()));
-	if(stylePath.empty() || !ghc::filesystem::exists(stylePath))
-		stylePath = string::wideToUtf8(defaultStylePath.wstring());
+	std::string stylePath = Settings::get<std::string>("menu/style_path", defaultStylePath.string());
+	if(stylePath.empty() || !std::filesystem::exists(stylePath))
+		stylePath = defaultStylePath.string();
 	
 	GUI::loadStyle(stylePath);
 	setFont(fontPath);
 
 	shortcuts.clear();
-	shadowTexture = cocos2d::CCTextureCache::get()->addImage(string::wideToUtf8((Mod::get()->getResourcesDir() / "shadow.png").wstring()).c_str(), true);
+	shadowTexture = cocos2d::CCTextureCache::get()->addImage((Mod::get()->getResourcesDir() / "shadow.png").string().c_str(), true);
 	load();
 }
 
@@ -424,7 +425,7 @@ void GUI::resetDefault()
 	}
 }
 
-void GUI::saveStyle(const ghc::filesystem::path& name)
+void GUI::saveStyle(const std::filesystem::path& name)
 {
 	std::ofstream styleFile(name, std::ios::binary);
 	if (styleFile)
@@ -435,7 +436,7 @@ void GUI::saveStyle(const ghc::filesystem::path& name)
 	styleFile.close();
 }
 
-void GUI::loadStyle(const ghc::filesystem::path& name)
+void GUI::loadStyle(const std::filesystem::path& name)
 {
 	std::ifstream styleFile(name, std::ios::binary);
 	if (styleFile)
@@ -455,9 +456,9 @@ void GUI::loadStyle(const ghc::filesystem::path& name)
 	styleFile.close();
 }
 
-void GUI::setFont(const ghc::filesystem::path& font)
+void GUI::setFont(const std::filesystem::path& font)
 {
-	ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(string::wideToUtf8(font.wstring()).c_str(), fontScale * uiSizeFactor);
+	ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(font.string().c_str(), fontScale * uiSizeFactor);
 	ImGui::GetIO().FontDefault = fnt;
 	ImGuiCocos::get().reloadFontTexture();
 }
