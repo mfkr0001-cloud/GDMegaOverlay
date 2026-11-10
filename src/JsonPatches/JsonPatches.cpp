@@ -30,7 +30,7 @@ void JsonPatches::init()
 				bool isCocos = patch.contains("lib") && patch["lib"].get<std::string>() == "libcocos2d.dll";
 				unsigned long address = std::stoul(patch["address"].get<std::string>(), nullptr, 16);
 
-				const std::uintptr_t base = isCocos ? base::getCocos() : base::get();
+				const std::uintptr_t base = base::get();
 
 				auto gpatch = Mod::get()->patch(reinterpret_cast<void*>(base + address), util::hexToBytes(patch["on"]));
 				
