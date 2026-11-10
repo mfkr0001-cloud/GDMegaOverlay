@@ -485,7 +485,7 @@ void GUI::marker(const std::string& title, const std::string& description)
 	if (!GUI::shouldRender())
 		return;
 
-	ImGui::TextDisabled(title.c_str());
+	ImGui::TextDisabled("%s", title.c_str());
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
