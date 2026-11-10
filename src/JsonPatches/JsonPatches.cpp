@@ -34,7 +34,7 @@ void JsonPatches::init()
 
 				auto gpatch = Mod::get()->patch(reinterpret_cast<void*>(base + address), util::hexToBytes(patch["on"]));
 				
-				if(gpatch.has_value())
+				if (gpatch.isOk())
 				{
 					auto gpatchptr = gpatch.unwrap();
 					gpatchptr->disable();
