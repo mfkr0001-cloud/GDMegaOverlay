@@ -1,3 +1,4 @@
+#include <filesystem>
 #include "Record.h"
 #include "../Common.h"
 #include "../GUI/GUI.h"
@@ -104,12 +105,12 @@ void Recorder::start_audio()
 	return;
 #endif
 	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
-	ghc::filesystem::path path = renderPath;
-	bool hasVideo = ghc::filesystem::exists(path);
+	std::filesystem::path path = renderPath;
+	bool hasVideo = std::filesystem::exists(path);
 
 	if (!hasVideo)
 	{
-		Common::showWithPriority(FLAlertLayer::create("Error", ("The render for the level has not been found!\n" + string::wideToUtf8(path.wstring())).c_str(), "Ok"));
+		Common::showWithPriority(FLAlertLayer::create("Error", ("The render for the level has not been found!\n" + path.string()).c_str(), "Ok"));
 		return;
 	}
 
@@ -205,7 +206,7 @@ void Recorder::start()
 
 	std::thread([&, bg_volume, sfx_volume, song_offset]()
 				{
-		ghc::filesystem::path renderedVideo = renderPath;
+		std::filesystem::path renderedVideo = renderPath;
 
 		{
 			std::stringstream stream;
@@ -333,8 +334,8 @@ void Recorder::stop_audio()
 	AudioRecord::stop();
 	m_recording_audio = false;
 
-	ghc::filesystem::path video_path = renderPath;
-	ghc::filesystem::path temp_path = video_path.parent_path() / "music.mp4";
+	std::filesystem::path video_path = renderPath;
+	std::filesystem::path temp_path = video_path.parent_path() / "music.mp4";
 
 	std::stringstream ss;
 
@@ -351,10 +352,10 @@ void Recorder::stop_audio()
 		std::cout << e.what() << '\n';
 	}
 
-	ghc::filesystem::remove("fmodoutput.wav");
+	std::filesystem::remove("fmodoutput.wav");
 
-	ghc::filesystem::remove(video_path);
-	ghc::filesystem::rename(temp_path,video_path);
+	std::filesystem::remove(video_path);
+	std::filesystem::rename(temp_path,video_path);
 }
 
 void Recorder::handle_recording_audio(GJBaseGameLayer *play_layer, float dt)
@@ -457,9 +458,9 @@ void Record::drawWindow()
 
 		if (GUI::button("Start Recording"))
 		{
-			if (!ghc::filesystem::exists("ffmpeg.exe"))
+			if (!std::filesystem::exists("ffmpeg.exe"))
 			{
-				auto process = subprocess::Popen(string::wideToUtf8((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").wstring()));
+				auto process = subprocess::Popen((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").string());
 				try
 				{
 					process.close();
@@ -470,11 +471,11 @@ void Record::drawWindow()
 				}
 			}
 
-			if (ghc::filesystem::exists("ffmpeg.exe"))
+			if (std::filesystem::exists("ffmpeg.exe"))
 			{
-				renderPath = pfd::save_file("Save Render", string::wideToUtf8((Mod::get()->getSaveDir() / "renders").wstring()), { "Video Files", "*.mp4"}).result();
+				renderPath = pfd::save_file("Save Render", (Mod::get()->getSaveDir() / "renders").string(), { "Video Files", "*.mp4"}).result();
 				
-				if(ghc::filesystem::path(renderPath).extension().string().empty())
+				if(std::filesystem::path(renderPath).extension().string().empty())
 					renderPath.append(".mp4");
 
 				if(!renderPath.empty())
