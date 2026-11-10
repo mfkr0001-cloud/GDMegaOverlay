@@ -1,3 +1,4 @@
+#include <filesystem>
 #include "DirectoryCombo.h"
 #include "Settings.hpp"
 #include "GUI.h"
@@ -8,20 +9,20 @@ using namespace geode::prelude;
 
 namespace GUI
 {
-DirectoryCombo::DirectoryCombo(std::string name, ghc::filesystem::path directory, std::string settingName)
+DirectoryCombo::DirectoryCombo(std::string name, std::filesystem::path directory, std::string settingName)
 {
     m_directory = directory;
     m_name = name;
     m_settingName = settingName;
 
-    ghc::filesystem::path targetPath = Settings::get<std::string>(m_settingName, "");
+    std::filesystem::path targetPath = Settings::get<std::string>(m_settingName, "");
 
     std::vector<std::string> files;
-    for (const auto& entry : ghc::filesystem::directory_iterator(m_directory))
-        files.push_back(string::wideToUtf8(entry.path().filename().wstring()));
+    for (const auto& entry : std::filesystem::directory_iterator(m_directory))
+        files.push_back(entry.path().filename().string());
 
     int i = 0;
-    for (const auto& entry : ghc::filesystem::directory_iterator(m_directory))
+    for (const auto& entry : std::filesystem::directory_iterator(m_directory))
     {
         if(entry.path() == targetPath)
             m_selectedIndex = i;
@@ -38,8 +39,8 @@ bool DirectoryCombo::draw()
         return false;
 
     std::vector<std::string> files;
-    for (const auto& entry : ghc::filesystem::directory_iterator(m_directory))
-        files.push_back(string::wideToUtf8(entry.path().filename().wstring()));
+    for (const auto& entry : std::filesystem::directory_iterator(m_directory))
+        files.push_back(entry.path().filename().string());
 
     if(ImGui::Combo(m_name.c_str(), &m_selectedIndex, [](void* vec, int idx, const char** out_text)
     {
@@ -51,7 +52,7 @@ bool DirectoryCombo::draw()
 	}, reinterpret_cast<void*>(&files), files.size()))
     {
         m_selectedFile = files.at(m_selectedIndex);
-        Mod::get()->setSavedValue<std::string>(m_settingName, string::wideToUtf8(getSelectedFilePath().wstring()));
+        Mod::get()->setSavedValue<std::string>(m_settingName, getSelectedFilePath().string());
         return true;
     }
 
@@ -63,22 +64,22 @@ std::string DirectoryCombo::getSelectedFile()
     return m_selectedFile;
 }
 
-ghc::filesystem::path DirectoryCombo::getSelectedFilePath()
+std::filesystem::path DirectoryCombo::getSelectedFilePath()
 {
     return m_directory / m_selectedFile;
 }
 
 
-void DirectoryCombo::setSelectedFilePath(ghc::filesystem::path path)
+void DirectoryCombo::setSelectedFilePath(std::filesystem::path path)
 {
     int i = 0;
-    for (const auto& entry : ghc::filesystem::directory_iterator(m_directory))
+    for (const auto& entry : std::filesystem::directory_iterator(m_directory))
     {
         if(entry.path() == path)
         {
             m_selectedIndex = i;
-            m_selectedFile = string::wideToUtf8(entry.path().filename().wstring());
-            Mod::get()->setSavedValue<std::string>(m_settingName, string::wideToUtf8(getSelectedFilePath().wstring()));
+            m_selectedFile = entry.path().filename().string();
+            Mod::get()->setSavedValue<std::string>(m_settingName, getSelectedFilePath().string());
             Mod::get()->saveData();
         }
         
