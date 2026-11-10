@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "Window.h"
 #include "Widgets.h"
 #include "Shortcut.h"
@@ -68,11 +70,11 @@ namespace GUI
 
 	void resetDefault();
 
-	void saveStyle(const ghc::filesystem::path& name);
-	void loadStyle(const ghc::filesystem::path& name);
+	void saveStyle(const std::filesystem::path& name);
+	void loadStyle(const std::filesystem::path& name);
 	void setStyle();
 
-	void setFont(const ghc::filesystem::path& font);
+	void setFont(const std::filesystem::path& font);
 
 	void drawStyleEditor();
 
