@@ -27,7 +27,9 @@ using namespace geode::prelude;
 void Common::calculateFramerate()
 {
 	bool vsync = GameManager::get()->getGameVariable("0030");
-	CCApplication::sharedApplication()->toggleVerticalSync(vsync);
+	#ifndef GEODE_IS_ANDROID
+CCApplication::sharedApplication()->toggleVerticalSync(vsync);
+#endif
 
 	if (vsync)
 		return;
