@@ -1,3 +1,4 @@
+#include <filesystem>
 #include "../Common.h"
 #include "../ConstData.h"
 #include "../GUI/GUI.h"
@@ -560,7 +561,7 @@ bool Macrobot::load(const std::string& file)
 
 void Macrobot::remove(const std::string& file)
 {
-	ghc::filesystem::remove(Mod::get()->getSaveDir() / "macros" / (file + ".gdr"));
+	std::filesystem::remove(Mod::get()->getSaveDir() / "macros" / (file + ".gdr"));
 }
 
 void Macrobot::drawMacroTable()
@@ -774,13 +775,13 @@ void Macrobot::getMacros()
 #endif
 	macroList.clear();
 
-	ghc::filesystem::path macroPath = Mod::get()->getSaveDir() / "macros";
+	std::filesystem::path macroPath = Mod::get()->getSaveDir() / "macros";
 
-	for (const auto& entry : ghc::filesystem::directory_iterator(macroPath))
+	for (const auto& entry : std::filesystem::directory_iterator(macroPath))
 	{
 		if (entry.path().extension() == ".gdr")
 		{
-			std::string name = string::wideToUtf8(entry.path().stem().wstring());
+			std::string name = entry.path().stem().string();
 			auto macroOpt = loadMacro(name, false);
 			if (macroOpt)
 				macroList.insert({name, macroOpt.value()});
