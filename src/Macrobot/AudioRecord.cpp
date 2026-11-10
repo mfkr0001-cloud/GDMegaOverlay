@@ -1,6 +1,6 @@
 #include "AudioRecord.h"
 #include "../Common.h"
-#include "../Hacks/AudioChannelControl.h"
+#include "../hacks/AudioChannelControl.h"
 
 #include <iostream>
 
