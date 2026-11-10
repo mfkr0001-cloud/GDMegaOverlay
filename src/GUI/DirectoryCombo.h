@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Geode/utils/file.hpp"
-#include <ghc/filesystem.hpp>
 
 namespace GUI
 {
