@@ -624,7 +624,7 @@ void GUI::popItemWidth()
 void GUI::tooltip(const std::string tooltip)
 {
 	if(ImGui::IsItemHovered())
-		ImGui::SetTooltip(tooltip.c_str());
+		ImGui::SetTooltip("%s", tooltip.c_str());
 }
 
 bool GUI::handleSearch(const std::string& label, const std::function<bool()>& function)
