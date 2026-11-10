@@ -57,7 +57,7 @@ class $modify(CCKeyboardDispatcher)
 			}
 
 			if (!ImGuiCocos::get().isInitialized())
-				return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr);
+				return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, false, 0.0);
 
 			if (const auto imKey = ConvertKeyEnum(key); imKey != ImGuiKey_None)
 				ImGui::GetIO().AddKeyEvent(imKey, down);
