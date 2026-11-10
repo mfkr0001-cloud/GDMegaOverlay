@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include <iostream>
 #include <vector>
 
@@ -17,7 +19,7 @@ public:
 	FMOD::Sound* randomPlatClick();
 	FMOD::Sound* randomPlatRelease();
 
-	static std::optional<Clickpack> fromPath(const ghc::filesystem::path& path);
+	static std::optional<Clickpack> fromPath(const std::filesystem::path& path);
 };
 
 namespace Clickpacks
