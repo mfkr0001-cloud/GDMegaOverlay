@@ -14,7 +14,7 @@
 
 using namespace geode::prelude;
 
-namespace fs = ghc::filesystem;
+namespace fs = std::filesystem;
 
 std::optional<Clickpack> Clickpack::fromPath(const fs::path& pathString)
 {
@@ -41,7 +41,7 @@ std::optional<Clickpack> Clickpack::fromPath(const fs::path& pathString)
 			if (entry.is_regular_file() && ext == ".wav")
 			{
 				FMOD::Sound* s = nullptr;
-				FMODAudioEngine::sharedEngine()->m_system->createSound(string::wideToUtf8(entry.path().wstring()).c_str(), FMOD_LOOP_OFF, 0, &s);
+				FMODAudioEngine::sharedEngine()->m_system->createSound(entry.path().string().c_str(), FMOD_LOOP_OFF, 0, &s);
 				vector.push_back(s);
 			}
 		}
