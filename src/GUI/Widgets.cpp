@@ -222,7 +222,7 @@ bool GUI::alertPopup(const std::string& name, const std::string& content, const 
 
 		ImGui::SetWindowPos({(displaySize.x - windowSize.x) * 0.5f, (displaySize.y - windowSize.y) * 0.5f});
 
-		ImGui::Text(content.c_str());
+		ImGui::Text("%s", content.c_str());
 
 		if (ImGui::Button(yesButton.name.c_str()))
 		{
