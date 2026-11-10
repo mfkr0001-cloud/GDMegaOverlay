@@ -1,0 +1,183 @@
+{
+    "mods": [
+        {
+            "cheat": true,
+            "description": "Prevents dying when encountering an object that kills you.",
+            "name": "NoClip",
+            "opcodes": [
+                {
+                    "address": "0x2E67D3",
+                    "on": "E9 42 07 00 00"
+                }
+            ]
+        },
+        {
+            "description": "No blending on the wave trail.",
+            "name": "Solid Wave Trail",
+            "opcodes": [
+                {
+                    "address": "0x2C3FB1",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x2C3FBA",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "description": "No blending on the trail.",
+            "name": "Solid Player Trail",
+            "opcodes": [
+                {
+                    "address": "0xB0F1C",
+                    "lib": "libcocos2d.dll",
+                    "on": "90 90 90"
+                }
+            ]
+        },
+        {
+            "description": "Coins & User-Coins show as uncollected.",
+            "name": "Always Show Coins",
+            "opcodes": [
+                {
+                    "address": "0x14B0D7",
+                    "on": "8B D9 90"
+                }
+            ]
+        },
+        {
+            "description": "Makes all of the player's effects have the primary color ",
+            "name": "Switch Effect Color",
+            "opcodes": [
+                {
+                    "address": "0x2D66CE",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "description": "Disables spider dash trail when teleporting",
+            "name": "No Spider Dash",
+            "opcodes": [
+                {
+                    "address": "0x2CF950",
+                    "on": "90 E9 28 02 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Disables robot fire when is propelled",
+            "name": "No Robot Fire",
+            "opcodes": [
+                {
+                    "address": "0x2C4B7C",
+                    "on": "90 E9 8A 01 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Removes the player blink animation when respawning.",
+            "name": "No Respawn Blink",
+            "opcodes": [
+                {
+                    "address": "0x2D165A",
+                    "on": "90 E9 A7 00 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Removes the player death animation.",
+            "name": "No Death Effect",
+            "opcodes": [
+                {
+                    "address": "0x2BA470",
+                    "on": "C3"
+                }
+            ]
+        },
+        {
+            "name": "Checkpoint Limit Bypass",
+            "description": "Allows you to place more checkpoints than the limit.",
+            "opcodes": [
+                {
+                    "address": "0x2E84D9",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "All Modes Platformer",
+            "description": "Allows for all modes to be played in platformer mode.",
+            "opcodes": [
+                {
+                    "address": "0x19C817",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x19C878",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Force Platformer",
+            "description": "Forces the level to be played in platformer mode.",
+            "opcodes": [
+                {
+                    "address": "0x1BD7B9",
+                    "on": "B2 01 90 90 90 90"
+                },
+                {
+                    "address": "0x1BD7EA",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "No Particles",
+            "description": "Disables all particles in the game.",
+            "opcodes": [
+                {
+                    "address": "0xBD52A",
+                    "lib": "libcocos2d.dll",
+                    "on": "E9 25 01 00 00 90"
+                }
+            ]
+        },
+        {
+            "name": "No Portal Lightning",
+            "description": "Disables portal lightning from size-changing portals.",
+            "opcodes": [
+                {
+                    "address": "0x2D9535",
+                    "on": "EB 2C 90"
+                }
+            ]
+        },
+        {
+            "name": "No Hide Trigger",
+            "description": "Disables hide player triggers.",
+            "opcodes": [
+                {
+                    "address": "0x39D417",
+                    "on": "01"
+                }
+            ]
+        },
+        {
+            "name": "No Ghost Trail",
+            "description": "Disables player ghost trail triggers.",
+            "opcodes": [
+                {
+                    "address": "0x2EAB14",
+                    "on": "6A 00 90"
+                },
+                {
+                    "address": "0x2EAB2D",
+                    "on": "6A 00 90"
+                }
+            ]
+        }
+    ]
+}

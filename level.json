@@ -1,0 +1,210 @@
+{
+    "mods": [
+        {
+            "description": "Disables pulsing on objects.",
+            "name": "No Object Pulse",
+            "opcodes": [
+                {
+                    "address": "0x2E35AB",
+                    "on": "90 E9 A1 00 00 00"
+                },
+                {
+                    "address": "0x2E35B8",
+                    "on": "90 E9 94 00 00 00"
+                }
+            ]
+        },
+        {
+            "name": "No Camera Move",
+            "description": "Disables all camera move triggers.",
+            "opcodes": [
+                {
+                    "address": "0x3B2B40",
+                    "on": "C2 0C 00"
+                }
+            ]
+        },
+        {
+            "name": "No Camera Zoom",
+            "description": "Disables all camera zoom triggers.",
+            "opcodes": [
+                {
+                    "address": "0x39DBE4",
+                    "on": "EB 44 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Pause During Complete",
+            "description": "Allows you to pause during the level complete cutscene.",
+            "opcodes": [
+                {
+                    "address": "0x2EAE98",
+                    "on": "90 90 90 90 90 90 90 90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Show Triggers",
+            "description": "Renders all triggers in the level like in the editor.",
+            "opcodes": [
+                {
+                    "address": "0x1372DB",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x2E1A44",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "No Mirror Portal",
+            "description": "Disables the mirror portal effect.",
+            "opcodes": [
+                {
+                    "address": "0x19CAA9",
+                    "on": "E9 8E 03 00 00 90"
+                }
+            ]
+        },
+        {
+            "name": "Anticheat Bypass",
+            "description": "Prevents the game from kicking you out of the level.",
+            "opcodes": [
+                {
+                    "address": "0x2DDD55",
+                    "on": "EB"
+                },
+                {
+                    "address": "0x2DDF61",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "No Shaders",
+            "description": "Disables all shaders.",
+            "opcodes": [
+                {
+                    "address": "0x3836DD",
+                    "on": "E9 27 01 00 00 90"
+                },
+                {
+                    "address": "0x3838B1",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "No \"Do Not\" Flip",
+            "description": "Removes text flipping, when using the \"Do Not\" option.",
+            "opcodes": [
+                {
+                    "address": "0xE7822",
+                    "on": "EB"
+                },
+                {
+                    "address": "0x2DD32F",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "No Camera Move",
+            "description": "Disables all camera move triggers.",
+            "opcodes": [
+                {
+                    "address": "0x3B2B40",
+                    "on": "C2 0C 00"
+                }
+            ]
+        },
+        {
+            "name": "No Camera Zoom",
+            "description": "Disables all camera zoom triggers.",
+            "opcodes": [
+                {
+                    "address": "0x39DBE4",
+                    "on": "EB 44 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Pause During Complete",
+            "description": "Allows you to pause during the level complete cutscene.",
+            "opcodes": [
+                {
+                    "address": "0x2EAE98",
+                    "on": "90 90 90 90 90 90 90 90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Show Triggers",
+            "description": "Renders all triggers in the level like in the editor.",
+            "opcodes": [
+                {
+                    "address": "0x1372DB",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x2E1A44",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "No Mirror Portal",
+            "description": "Disables the mirror portal effect.",
+            "opcodes": [
+                {
+                    "address": "0x19CAA9",
+                    "on": "E9 8E 03 00 00 90"
+                }
+            ]
+        },
+        {
+            "name": "Anticheat Bypass",
+            "description": "Prevents the game from kicking you out of the level.",
+            "opcodes": [
+                {
+                    "address": "0x2DDD55",
+                    "on": "EB"
+                },
+                {
+                    "address": "0x2DDF61",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "No Shaders",
+            "description": "Disables all shaders.",
+            "opcodes": [
+                {
+                    "address": "0x3836DD",
+                    "on": "E9 27 01 00 00 90"
+                },
+                {
+                    "address": "0x3838B1",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "No \"Do Not\" Flip",
+            "description": "Removes text flipping, when using the \"Do Not\" option.",
+            "opcodes": [
+                {
+                    "address": "0xE7822",
+                    "on": "EB"
+                },
+                {
+                    "address": "0x2DD32F",
+                    "on": "EB"
+                }
+            ]
+        }
+    ]
+}

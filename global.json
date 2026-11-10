@@ -1,0 +1,339 @@
+{
+    "mods": [
+        {
+            "description": "Speeds up chest opening animation.",
+            "name": "Fast Chest Open",
+            "opcodes": [
+                {
+                    "address": "0x2F82F4",
+                    "on": "C7 04 24 00 00 00 00"
+                },
+                {
+                    "address": "0x2F840D",
+                    "on": "C7 04 24 00 00 00 00"
+                },
+                {
+                    "address": "0x2F8504",
+                    "on": "C7 04 24 00 00 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Makes the level complete animation at the end of the level instant.",
+            "name": "Fast Show Complete",
+            "opcodes": [
+                {
+                    "address": "0x2DE901",
+                    "on": "C7 04 24 00 00 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Disable the player's level ending animation.",
+            "name": "No Ending Animation",
+            "opcodes": [
+                {
+                    "address": "0x2DECEC",
+                    "on": "EB 52"
+                }
+            ]
+        },
+        {
+            "description": "Removed snapping to 0.00 setting volume to 0.03",
+            "name": "Enable Low Volume",
+            "opcodes": [
+                {
+                    "address": "0x2B0E00",
+                    "on": "EB 08"
+                },
+                {
+                    "address": "0x2B0EF1",
+                    "on": "EB 08"
+                }
+            ]
+        },
+        {
+            "description": "Makes the controller buttons visible.",
+            "name": "Show Controller Buttons",
+            "opcodes": [
+                {
+                    "address": "0x31854",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x2B92D6",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x9D9B2",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x27BD8F",
+                    "on": "0F 85 98 04 00 00"
+                },
+                {
+                    "address": "0x253473",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0xE8868",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x233269",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x2332F8",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x23330B",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x1D6ABC",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x1EF729",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x22E148",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x25B9C8",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x269A05",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x2F5B3A",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x302004",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x30B83E",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x3BF17C",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x5AD17",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x234350",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x70278",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x184D15",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x1873FE",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x21A60A",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x22F7B1",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x231327",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x262511",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x268722",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x26853B",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x26849D",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x2FBAEF",
+                    "on": "90 90" 
+                },
+                {
+                    "address": "0x305DB0",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x30EC93",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x31916",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x5AB9F",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x5ABAF",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x5AB0C",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x18718E",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x1871AD",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x18724B",
+                    "on": "90 90 90"
+                }
+            ]
+        },
+        {
+            "description": "Removes the gray backgrounds in the level search menu.",
+            "name": "Transparent Search Menu",
+            "opcodes": [
+                {
+                    "address": "0x26141D",
+                    "on": "68 00"
+                },
+                {
+                    "address": "0x26196D",
+                    "on": "68 00"
+                },
+                {
+                    "address": "0x261F2B",
+                    "on": "68 00"
+                },
+                {
+                    "address": "0x2621F9",
+                    "on": "68 00"
+                },
+                {
+                    "address": "0x9CCDA",
+                    "on": "68 00"
+                },
+                {
+                    "address": "0x9CFA9",
+                    "on": "68 00"
+                }
+            ]
+        },
+        {
+            "description": "Removes the background in all menus.",
+            "name": "Black Background",
+            "opcodes": [
+                {
+                    "address": "0x6F674",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x9CA7B",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x186DA1",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x1EF31F",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x22DD3C",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x232FB2",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x25185E",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x25A55D",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x260FD9",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x267DEA",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x2FB80D",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x301BE3",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x30598A",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x30A42F",
+                    "on": "C7 04 24 00 00 FF FF"
+                },
+                {
+                    "address": "0x30E864",
+                    "on": "C7 04 24 00 00 FF FF"
+                }
+            ]
+        },
+        {
+            "name": "No Short Numbers",
+            "description": "All numbers are displayed in full.\n(For example, \"1.5M\" becomes \"1500000\".)",
+            "opcodes": [
+                {
+                    "address": "0x454FE",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "name": "Free Window Resize",
+            "description": "Allows you to resize the window freely.",
+            "opcodes": [
+                {
+                    "address": "0x118A2B",
+                    "lib": "libcocos2d.dll",
+                    "on": "90 90 90 90 90"
+                }
+            ]
+        }
+    ]
+}

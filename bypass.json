@@ -1,0 +1,248 @@
+{
+    "mods": [
+        {
+            "description": "Unlocks all icons.",
+            "name": "Icon Bypass",
+            "opcodes": [
+                {
+                    "address": "0x122078",
+                    "on": "B0 01 90 90 90"
+                },
+                {
+                    "address": "0x122547",
+                    "on": "B0 01 90 90 90"
+                }
+            ]
+        },
+        {
+            "description": "Lets you input any character in all text inputs.",
+            "name": "Character Filter",
+            "opcodes": [
+                {
+                    "address": "0x2F974",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "description": "Lets sliders be dragged beyond the visible limit.",
+            "name": "Slider Limit",
+            "opcodes": [
+                {
+                    "address": "0x4D04A",
+                    "on": "EB 21"
+                },
+                {
+                    "address": "0x4D078",
+                    "on": "EB 26"
+                },
+                {
+                    "address": "0xDF1E8",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "description": "Allows for unlimited text length in text inputs.",
+            "name": "Text Length",
+            "opcodes": [
+                {
+                    "address": "0x2F9A7",
+                    "on": "EB 04"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks locked demon levels.",
+            "name": "Main Levels",
+            "opcodes": [
+                {
+                    "address": "0x26C111",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x26C113",
+                    "on": "EB 7A"
+                },
+                {
+                    "address": "0x26A3B5",
+                    "on": "90 E9 F0 01 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Bypasses demon gauntlet lock.",
+            "name": "Demon Gauntlet",
+            "opcodes": [
+                {
+                    "address": "0x18834C",
+                    "on": "90 E9 C9 01 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Bypasses load failed for modified main levels.",
+            "name": "Load Failed",
+            "opcodes": [
+                {
+                    "address": "0x2751D8",
+                    "on": "E9 13 01 00 00 90"
+                }
+            ]
+        },
+        {
+            "description": "Remove the countdown from comments, backup, sync and post (Excessive use may cause the server to block your account).",
+            "name": "Timeout Bypass",
+            "opcodes": [
+                {
+                    "address": "0x22ACCB",
+                    "on": "EB 40"
+                },
+                {
+                    "address": "0x57D01",
+                    "on": "EB 51"
+                },
+                {
+                    "address": "0x57E58",
+                    "on": "EB 51"
+                },
+                {
+                    "address": "0x2F09E4",
+                    "on": "EB 42"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks the guard's vault.",
+            "name": "Guard Vault",
+            "opcodes": [
+                {
+                    "address": "0x2B0FDD",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x2B0792",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x2B0818",
+                    "on": "90 E9 1C 01 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks the Keymaster's vault.",
+            "name": "Keymaster Vault",
+            "opcodes": [
+                {
+                    "address": "0x70E51",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x6FEB4",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x6FF41",
+                    "on": "90 E9 3C 01 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks the Keymaster's basement.",
+            "name": "Keymaster Basement",
+            "opcodes": [
+                {
+                    "address": "0x305EB8",
+                    "on": "90 90 90"
+                },
+                {
+                    "address": "0x306E7C",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks 'The Challenge' level.",
+            "name": "Challenge Bypass",
+            "opcodes": [
+                {
+                    "address": "0x306C79",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "description": "Lets you unlock the locks in the basement.",
+            "name": "Basement Bypass",
+            "opcodes": [
+                {
+                    "address": "0x30C39F",
+                    "on": "90 E9 61 01 00 00"
+                },
+                {
+                    "address": "0x30C547",
+                    "on": "90 E9 65 01 00 00"
+                },
+                {
+                    "address": "0x30C6F3",
+                    "on": "90 E9 49 02 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks the Gatekeeper's vault.",
+            "name": "Gatekeeper Vault",
+            "opcodes": [
+                {
+                    "address": "0x26BC77",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x26B99E",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x26B9D5",
+                    "on": "90 90 90"
+                }
+            ]
+        },
+        {
+            "description": "Unlocks the treasure room.",
+            "name": "Treasure Room",
+            "opcodes": [
+                {
+                    "address": "0x71175",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x700FB",
+                    "on": "90 90 90"
+                }
+            ]
+        },
+        {
+            "description": "Lets you backup data, even with less than 10 stars.",
+            "name": "Backup Stars Limit",
+            "opcodes": [
+                {
+                    "address": "0x57C8E",
+                    "on": "EB 52"
+                }
+            ]
+        },
+        {
+            "description": "Enables Practice Music Sync without having to buy it from the shop.",
+            "name": "Practice Music Sync",
+            "opcodes": [
+                {
+                    "address": "0x2E5A79",
+                    "off": "00",
+                    "on": "01"
+                }
+            ],
+            "toggle": false
+        }
+    ]
+}

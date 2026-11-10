@@ -1,0 +1,30 @@
+{
+    "geode": "5.11.2",
+    "gd": {
+        "android": "2.2081"
+    },
+    "version": "v2.11.1-android.1",
+    "id": "maxnu.gd_mega_overlay",
+    "name": "GD Mega Overlay",
+    "developers": [
+        "maxnu",
+        "SpaghettDev"
+    ],
+    "description": "GD Mega Overlay adapted for Geometry Dash 2.2081 on Android ARM64.",
+    "links": {
+        "source": "https://github.com/maxnut/GDMegaOverlay"
+    },
+    "resources": {
+        "files": [
+            "res/hacks/*.json",
+            "res/Style.style",
+            "res/Roboto-Regular.ttf",
+            "res/get_ffmpeg/*",
+            "res/default_windows.json",
+            "res/shadow.png"
+        ]
+    },
+    "dependencies": {
+        "geode.node-ids": ">=v1.23.3"
+    }
+}

@@ -1,0 +1,142 @@
+{
+    "mods": [
+        {
+            "description": "Lets you copy any level, without a password.",
+            "name": "Copy Hack",
+            "opcodes": [
+                {
+                    "address": "0x252985",
+                    "on": "0F 8E DF 00 00 00"
+                }
+            ]
+        },
+        {
+            "description": "Lets you edit any level, access the editor through the pause menu.",
+            "name": "Level Edit",
+            "opcodes": [
+                {
+                    "address": "0xE8296",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x2B8CEA",
+                    "on": "90 90 90 90 90 90"
+                },
+                {
+                    "address": "0x2B8D4A",
+                    "on": "83 B8 C0 03 00 00 00 0F 4F CA"
+                },
+                {
+                    "address": "0x2BA03B",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Custom Object Bypass",
+            "description": "Allows you to save custom objects with more than 1000 objects in them.",
+            "opcodes": [
+                {
+                    "address": "0xA8214",
+                    "on": "E9 83 00"
+                },
+                {
+                    "address": "0xA83C4",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "name": "No (C) Mark",
+            "description": "Removes the \"(C)\" mark from copied levels.",
+            "opcodes": [
+                {
+                    "address": "0x9E377",
+                    "on": "EB"
+                },
+                {
+                    "address": "0xFBA34",
+                    "on": "28 03 00 00"
+                }
+            ]
+        },
+        {
+            "name": "Z Order Bypass",
+            "description": "Removes the -100 to 100 Z order range limit.",
+            "opcodes": [
+                {
+                    "address": "0x3130EB",
+                    "on": "90 90 90 B9 64 00 00 00 3B C1 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Smooth Editor Trail",
+            "description": "Makes the trail in editor playback smoother.",
+            "opcodes": [
+                {
+                    "address": "0x24777E",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "name": "Default Song Bypass",
+            "description": "Allows you to use any song in the level editor.",
+            "opcodes": [
+                {
+                    "address": "0x92279",
+                    "on": "90 90"
+                },
+                {
+                    "address": "0x92283",
+                    "on": "EB 0F 90 90 90"
+                },
+                {
+                    "address": "0x922C2",
+                    "on": "EB 0F 90 90 90"
+                },
+                {
+                    "address": "0x922B8",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "name": "Place Over",
+            "description": "Allows you to place objects over other objects.",
+            "opcodes": [
+                {
+                    "address": "0xC821C",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Objects Scale Bypass",
+            "description": "Removes the scaling limit when multiple objects are selected.",
+            "opcodes": [
+                {
+                    "address": "0xD65FA",
+                    "on": "0F 57 C9 90 90 90 90 90"
+                },
+                {
+                    "address": "0xD66D4",
+                    "on": "84"
+                },
+                {
+                    "address": "0xD6793",
+                    "on": "84"
+                },
+                {
+                    "address": "0xD66D9",
+                    "on": "90 90 90 90 90 90 90 90 90 90 90"
+                },
+                {
+                    "address": "0xD6798",
+                    "on": "90 90 90 90 90 90 90 90 90 90 90"
+                }
+            ]
+        }
+    ]
+}
