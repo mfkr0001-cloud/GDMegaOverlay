@@ -63,7 +63,7 @@ class $modify(CCKeyboardDispatcher)
 				ImGui::GetIO().AddKeyEvent(imKey, down);
 		}
 
-		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr);
+		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, false, 0.0);
 	}
 };
 
