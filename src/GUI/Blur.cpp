@@ -16,21 +16,21 @@ struct Vertex {
 
 GLuint VAO, VBO;
 
+// Desktop CCEGLView exposes window-management hooks; Android does not.
+#if !defined(__ANDROID__)
 class $modify(CCEGLView) {
-
 	void toggleFullScreen(bool value, bool borderless) {
 		gdRenderTexture = nullptr;
 		CCEGLView::toggleFullScreen(value, borderless);
 	}
 
-	void resizeWindow(int width, int height)
-	{
+	void resizeWindow(int width, int height) {
 		CCEGLView::resizeWindow(width, height);
-
 		if (gdRenderTexture)
 			gdRenderTexture->resize({(float)width, (float)height});
 	}
 };
+#endif
 
 class $modify(CCNode) {
 	void visit() {
@@ -76,7 +76,8 @@ class $modify(CCNode) {
 		}
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_QUADS, 0, 4);
+		// The four vertices form a rectangle; triangle fan works on OpenGL ES.
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		glBindVertexArray(0);
 
 		glBindTexture(GL_TEXTURE_2D, oldTexture);
