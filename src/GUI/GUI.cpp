@@ -14,7 +14,7 @@
 #include "ConstData.h"
 
 #include "Common.h"
-#include "Hacks/SafeMode.h"
+#include "hacks/SafeMode.h"
 
 #include "Blur.h"
 
