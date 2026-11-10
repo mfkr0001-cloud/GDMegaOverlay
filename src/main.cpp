@@ -33,16 +33,16 @@ using namespace geode::prelude;
 
 void init()
 {
-	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "macros"))
-		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "macros");
-	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "renders"))
-		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "renders");
-	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "clickpacks"))
-		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "clickpacks");
-	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "styles"))
-		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "styles");
-	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "fonts"))
-		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "fonts");
+	if (!std::filesystem::exists(Mod::get()->getSaveDir() / "macros"))
+		std::filesystem::create_directory(Mod::get()->getSaveDir() / "macros");
+	if (!std::filesystem::exists(Mod::get()->getSaveDir() / "renders"))
+		std::filesystem::create_directory(Mod::get()->getSaveDir() / "renders");
+	if (!std::filesystem::exists(Mod::get()->getSaveDir() / "clickpacks"))
+		std::filesystem::create_directory(Mod::get()->getSaveDir() / "clickpacks");
+	if (!std::filesystem::exists(Mod::get()->getSaveDir() / "styles"))
+		std::filesystem::create_directory(Mod::get()->getSaveDir() / "styles");
+	if (!std::filesystem::exists(Mod::get()->getSaveDir() / "fonts"))
+		std::filesystem::create_directory(Mod::get()->getSaveDir() / "fonts");
 
 	JsonPatches::init();
 	DiscordRPCManager::init();
@@ -459,9 +459,9 @@ void initGUI()
 
 #if defined(_WIN32)
 		if (GUI::button("Open Resources Folder"))
-			ShellExecute(0, NULL, string::wideToUtf8(Mod::get()->getResourcesDir().wstring()).c_str(), NULL, NULL, SW_SHOW);
+			ShellExecute(0, NULL, Mod::get()->getResourcesDir().string().c_str(), NULL, NULL, SW_SHOW);
 		if (GUI::button("Open Save Folder"))
-			ShellExecute(0, NULL, string::wideToUtf8(Mod::get()->getSaveDir().wstring()).c_str(), NULL, NULL, SW_SHOW);
+			ShellExecute(0, NULL, Mod::get()->getSaveDir().string().c_str(), NULL, NULL, SW_SHOW);
 #endif
 		if (GUI::button("Reset Windows"))
 			GUI::resetDefault();
