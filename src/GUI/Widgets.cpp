@@ -180,9 +180,9 @@ bool GUI::hotkey(const std::string& name, int* keyPointer, const ImVec2& size_ar
 		displayKeyIndex = 0;
 
 	if (*keyPointer != 0 && g.ActiveId != id)
-		strcpy_s(buf_display, KeyNames[displayKeyIndex]);
+		snprintf(buf_display, sizeof(buf_display), "%s", KeyNames[displayKeyIndex]);
 	else if (g.ActiveId == id)
-		strcpy_s(buf_display, "<Press a key>");
+		snprintf(buf_display, sizeof(buf_display), "%s", "<Press a key>");
 
 	const ImRect clip_rect(frame_bb.Min.x, frame_bb.Min.y, frame_bb.Min.x + size.x, frame_bb.Min.y + size.y);
 	ImVec2 render_pos = frame_bb.Min + style.FramePadding;
