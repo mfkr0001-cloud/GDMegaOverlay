@@ -9,6 +9,11 @@ set(SKIP_BUILDING_CODEGEN off)
 
 project(GDMegaOverlay LANGUAGES CXX VERSION 1.0.0)
 
+# CMake 4.x rejects dependencies that declare cmake_minimum_required(VERSION < 3.5).
+# Keep the project minimum unchanged, but allow legacy FetchContent dependencies
+# to configure with the 3.5 policy baseline (nlohmann-json, portable-file-dialogs, etc.).
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 file(GLOB SOURCES
   src/*.cpp
   src/*.h
