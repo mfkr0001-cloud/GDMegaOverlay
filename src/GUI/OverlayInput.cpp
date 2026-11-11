@@ -9,8 +9,8 @@
 #include <Geode/modify/CCScene.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
-#include <Geode/cocos/CCTextureCache.h>
-#include <Geode/cocos/CCTexture2D.h>
+#include <Geode/cocos/textures/CCTextureCache.h>
+#include <Geode/cocos/textures/CCTexture2D.h>
 #include <imgui-cocos.hpp>
 #include <imgui_internal.h>
 
