@@ -277,6 +277,7 @@ void Recorder::stop()
     m_recording = false;
 }
 
+#if !defined(__ANDROID__)
 void MyRenderTexture::begin()
 {
     glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &m_old_fbo);
@@ -329,6 +330,11 @@ void MyRenderTexture::end()
 {
     m_texture->release();
 }
+#else
+void MyRenderTexture::begin() {}
+void MyRenderTexture::capture(std::mutex&, std::vector<u8>&, volatile bool&) {}
+void MyRenderTexture::end() {}
+#endif
 
 void Recorder::capture_frame()
 {
@@ -393,6 +399,7 @@ void Recorder::handle_recording_audio(GJBaseGameLayer *play_layer, float dt)
     }
 }
 
+#if !defined(__ANDROID__)
 void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 {
     if (!levelDone || m_after_end_extra_time < m_after_end_duration)
@@ -449,6 +456,13 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
             Common::showWithPriority(FLAlertLayer::create("Info", "Macro rendered successfully!", "Ok"));
     }
 }
+#else
+void Recorder::handle_recording(GJBaseGameLayer* play_layer, float dt)
+{
+    (void)play_layer;
+    (void)dt;
+}
+#endif
 
 void Record::drawWindow()
 {
