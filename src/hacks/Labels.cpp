@@ -3,8 +3,8 @@
 #include "../GUI/GUI.h"
 #include "../JsonPatches/JsonPatches.h"
 #include "../Settings.hpp"
-#include "Hacks/SafeMode.h"
-#include "Hacks/ShowTrajectory.h"
+#include "hacks/SafeMode.h"
+#include "hacks/ShowTrajectory.h"
 #include "Macrobot/Macrobot.h"
 
 #include <Geode/modify/PlayLayer.hpp>
