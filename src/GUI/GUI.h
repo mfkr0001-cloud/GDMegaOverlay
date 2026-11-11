@@ -1,6 +1,18 @@
+
 #pragma once
 
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+
+#include <imgui.h>
+#include <imgui_internal.h>
+
 #include <filesystem>
+#include <functional>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 #include "Window.h"
 #include "Widgets.h"
@@ -9,74 +21,68 @@
 #include "DirectoryCombo.h"
 
 #include <nlohmann/json.hpp>
-#include <vector>
-#include <unordered_map>
-
 #include <cocos2d.h>
 
 using json = nlohmann::json;
 
 class WindowAction;
-class ImGuiStyle;
 
 namespace GUI
 {
-	inline std::vector<Window> windows;
-	inline std::vector<Shortcut> shortcuts;
-	inline std::vector<WindowAction*> windowActions;
+    inline std::vector<Window> windows;
+    inline std::vector<Shortcut> shortcuts;
+    inline std::vector<WindowAction*> windowActions;
 
-	inline std::unordered_map<std::string, Window*> windowReferences;
+    inline std::unordered_map<std::string, Window*> windowReferences;
 
-	inline std::string currentShortcut = "";
-	inline std::string searchBar = "";
-	inline json windowPositions;
+    inline std::string currentShortcut = "";
+    inline std::string searchBar = "";
+    inline json windowPositions;
 
-	inline bool isVisible = false;
-	inline bool shortcutLoop = false;
-	inline bool toggled = false;
-	inline bool hasLateInit = false;
-	inline bool canToggle = false;
+    inline bool isVisible = false;
+    inline bool shortcutLoop = false;
+    inline bool toggled = false;
+    inline bool hasLateInit = false;
+    inline bool canToggle = false;
 
-	inline float hideTimer = 0.0f;
-	inline float uiSizeFactor = 1.f;
+    inline float hideTimer = 0.0f;
+    inline float uiSizeFactor = 1.f;
+    inline float fontScale = 16.f;
 
-	inline float fontScale = 16.f;
+    inline ImGuiStyle loadedStyle;
+    inline DirectoryCombo styleCombo;
+    inline DirectoryCombo fontCombo;
 
-	inline ImGuiStyle loadedStyle;
-	inline DirectoryCombo styleCombo;
-	inline DirectoryCombo fontCombo;
+    inline cocos2d::CCTexture2D* shadowTexture = nullptr;
 
-	inline cocos2d::CCTexture2D* shadowTexture = nullptr;
+    inline std::function<void()> lateInit;
 
-	inline std::function<void()> lateInit;
+    ImVec2 getJsonPosition(const std::string&);
+    void setJsonPosition(const std::string&, ImVec2);
 
-	ImVec2 getJsonPosition(const std::string&);
-	void setJsonPosition(const std::string&, ImVec2);
+    ImVec2 getJsonSize(const std::string&, ImVec2 defaultSize);
+    void setJsonSize(const std::string&, ImVec2);
 
-	ImVec2 getJsonSize(const std::string&, ImVec2 defaultSize);
-	void setJsonSize(const std::string&, ImVec2);
+    void init();
+    void setLateInit(const std::function<void()>& func);
 
-	void init();
-	void setLateInit(const std::function<void()>&func);
+    void draw();
+    void toggle();
 
-	void draw();
+    void addWindow(Window window);
 
-	void toggle();
+    void save();
+    void load();
 
-	void addWindow(Window window);
+    void resetDefault();
 
-	void save();
-	void load();
+    void saveStyle(const std::filesystem::path& name);
+    void loadStyle(const std::filesystem::path& name);
+    void setStyle();
 
-	void resetDefault();
+    void setFont(const std::filesystem::path& font);
 
-	void saveStyle(const std::filesystem::path& name);
-	void loadStyle(const std::filesystem::path& name);
-	void setStyle();
+    void drawStyleEditor();
 
-	void setFont(const std::filesystem::path& font);
-
-	void drawStyleEditor();
-
-	bool shouldRender();
+    bool shouldRender();
 };
