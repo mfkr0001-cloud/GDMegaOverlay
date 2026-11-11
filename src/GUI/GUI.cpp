@@ -211,6 +211,9 @@ void GUI::draw()
 
     ImGui::GetStyle() = loadedStyle;
     ImGui::GetStyle().ScaleAllSizes(uiSizeFactor);
+    ImGui::GetStyle().FramePadding *= 0.90f;
+    ImGui::GetStyle().ItemSpacing *= 0.90f;
+    ImGui::GetStyle().ItemInnerSpacing *= 0.90f;
 
     for (WindowAction* ac : windowActions)
         ac->step(ImGui::GetIO().DeltaTime);
