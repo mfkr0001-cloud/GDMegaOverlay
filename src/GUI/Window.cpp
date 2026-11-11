@@ -49,12 +49,6 @@ void Window::draw() {
             );
         }
 
-        // Apply the saved geometry only on first creation. Reapplying SetWindowSize
-        // every frame prevents ImGui's native resize handle from working correctly.
-        const ImGuiCond geometryCondition = geometryDirty ? ImGuiCond_Always : ImGuiCond_Once;
-        ImGui::SetNextWindowPos(position, geometryCondition);
-        ImGui::SetNextWindowSize(size, geometryCondition);
-
         bool blurEnabled = Settings::get<bool>("menu/blur/enabled", false);
         bool blurGD = Settings::get<bool>("menu/blur/gd", false);
         float windowTransparency = Settings::get<float>("menu/window/opacity", 0.98f);
@@ -65,34 +59,58 @@ void Window::draw() {
         else
             ImGui::SetNextWindowBgAlpha(windowTransparency);
 
-        const bool windowOpen = ImGui::Begin(name.c_str(), nullptr, flags);
+        ImGui::Begin(name.c_str(), nullptr, flags);
 
-        if (windowOpen) {
-            if (Settings::get<bool>("menu/title_gradient/enabled", true))
-                customTitlebar();
+        if (Settings::get<bool>("menu/title_gradient/enabled", true))
+            customTitlebar();
 
-            if (blurEnabled && !blurGD)
-                Blur::blurWindowBackground();
+        if (blurEnabled && !blurGD)
+            Blur::blurWindowBackground();
 
-            if (Settings::get<bool>("menu/box_shadow/enabled", true))
-                dropShadow(Settings::get<float>("menu/box_shadow/size", 24.f), 255);
+        if (Settings::get<bool>("menu/box_shadow/enabled", true))
+            dropShadow(Settings::get<float>("menu/box_shadow/size", 24.f), 255);
 
-            ImGui::SetWindowFontScale(ImClamp(fontScale, 0.5f, 2.5f));
-            windowFunction();
+        ImGui::SetWindowFontScale(Settings::get<float>("menu/ui_scale", 1.f));
+
+        if (ImGui::IsMouseDragging(0, 0.1f) &&
+            (ImGui::IsWindowFocused() ||
+             ImGui::IsMouseHoveringRect(
+                 ImGui::GetWindowPos(),
+                 ImGui::GetWindowPos() + ImGui::GetWindowSize()
+             ))) {
+
+            position = ImGui::GetWindowPos();
+            size = ImGui::GetWindowSize();
+
+            int snap = Settings::get<int>("menu/window/snap", 10);
+            if (snap > 1)
+                position = {
+                    roundSnap(position.x, snap),
+                    roundSnap(position.y, snap)
+                };
+
+            int sizeSnap = Settings::get<int>("menu/window/size_snap", 10);
+            if (sizeSnap > 1)
+                size = {
+                    roundSnap(size.x, sizeSnap),
+                    roundSnap(size.y, sizeSnap)
+                };
+
+            renderPosition = position;
+
+            GUI::setJsonPosition(name, position);
+            GUI::setJsonSize(name, size);
         }
 
-        // Read actual ImGui geometry after its move/resize handling (also works with touch input).
-        geometryDirty = false;
-        position = ImGui::GetWindowPos();
-        renderPosition = position;
-        size = ImGui::GetWindowSize();
-        GUI::setJsonPosition(name, position);
-        GUI::setJsonSize(name, size);
-        ImGui::End();
+        ImGui::SetWindowSize(size);
+        ImGui::SetWindowPos(renderPosition);
     }
-    else if (!GUI::isVisible) {
+
+    if ((GUI::isVisible && visibleInScreen()) || !GUI::isVisible)
         windowFunction();
-    }
+
+    if (GUI::isVisible && visibleInScreen())
+        ImGui::End();
 }
 
 // Adapted from Dear ImGui window title bar implementation.
