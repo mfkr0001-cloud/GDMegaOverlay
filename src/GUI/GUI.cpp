@@ -22,7 +22,7 @@ using namespace geode::prelude;
 
 class $modify(CCKeyboardDispatcher)
 {
-	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr)
+	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr, double time)
 	{
 		if (!arr)
 		{
@@ -57,13 +57,13 @@ class $modify(CCKeyboardDispatcher)
 			}
 
 			if (!ImGuiCocos::get().isInitialized())
-				return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, false, 0.0);
+				return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, false, time);
 
 			if (const auto imKey = ConvertKeyEnum(key); imKey != ImGuiKey_None)
 				ImGui::GetIO().AddKeyEvent(imKey, down);
 		}
 
-		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, false, 0.0);
+		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, false, time);
 	}
 };
 
