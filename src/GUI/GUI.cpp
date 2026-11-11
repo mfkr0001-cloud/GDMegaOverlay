@@ -141,6 +141,12 @@ void GUI::init()
 {
     hasLateInit = false;
     uiSizeFactor = CCDirector::sharedDirector()->getOpenGLView()->getFrameSize().width / 1920.0f;
+    uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
+#if defined(__ANDROID__)
+    // Apply the Android scale before fonts and default window sizes are created.
+    // This keeps text, widgets, tabs and window geometry in the same scale.
+    uiSizeFactor *= 0.50f;
+#endif
     Blur::compiled = false;
 
     windowPositions = json::object();
@@ -193,6 +199,12 @@ void GUI::draw()
 {
     uiSizeFactor = CCDirector::sharedDirector()->getOpenGLView()->getFrameSize().width / 1920.0f;
     uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
+
+#if defined(__ANDROID__)
+    // Keep draw-time widget constraints in sync with the font and window scale
+    // selected in GUI::init().
+    uiSizeFactor *= 0.50f;
+#endif
 
     if (!isVisible && !shortcutLoop)
         return;
