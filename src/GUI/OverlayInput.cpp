@@ -399,8 +399,21 @@ namespace OverlayInput {
         if (!ImGui::GetCurrentContext())
             return;
 
-        if (GUI::toggled)
+        if (GUI::toggled) {
             drawCloseButton();
+
+            // Android touch is forwarded to ImGui as mouse input. Draw a small
+            // software pointer so the current touch/cursor position is visible.
+            ImGuiIO& io = ImGui::GetIO();
+            if (io.MousePos.x >= 0.f && io.MousePos.y >= 0.f &&
+                io.MousePos.x < io.DisplaySize.x && io.MousePos.y < io.DisplaySize.y) {
+                ImDrawList* drawList = ImGui::GetForegroundDrawList();
+                const ImVec2 p = io.MousePos;
+                drawList->AddCircleFilled(p, 7.0f, IM_COL32(20, 24, 30, 220), 20);
+                drawList->AddCircle(p, 7.0f, IM_COL32(255, 255, 255, 245), 20, 2.0f);
+                drawList->AddCircleFilled(p, 2.5f, IM_COL32(60, 235, 120, 255), 16);
+            }
+        }
     }
 }
 
