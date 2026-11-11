@@ -31,7 +31,7 @@ using namespace Macrobot;
 
 class $modify(CCKeyboardDispatcher)
 {
-	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr)
+	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr, double time)
 	{
 		if (key == enumKeyCodes::KEY_D || key == enumKeyCodes::KEY_ArrowRight)
 			direction = down ? 1 : 0;
@@ -47,12 +47,12 @@ class $modify(CCKeyboardDispatcher)
 			holdingAdvance = down;
 
 		if (!down || arr)
-			return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr);
+			return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr, time);
 
 		if (convertedKey == advanceKey && PlayLayer::get())
-			targetSteps = PlayLayer::get()->m_gameState.m_unk1f8 + Settings::get<int>("macrobot/frame_step/steps", 1);
+			targetSteps = currentFrame + Settings::get<int>("macrobot/frame_step/steps", 1);
 
-		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr);
+		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr, time);
 	}
 };
 
@@ -178,7 +178,7 @@ class $modify(PlayerObject)
 			if (!pl->m_levelSettings->m_twoPlayerMode && this == pl->m_player2)
 				return;
 
-			recordAction(btn, pl->m_gameState.m_unk1f8, true, this == pl->m_player1);
+			recordAction(btn, currentFrame, true, this == pl->m_player1);
 		}
 	}
 
@@ -202,7 +202,7 @@ class $modify(PlayerObject)
 			if (btn == PlayerButton::Left && direction == -1)
 				return;
 
-			recordAction(btn, pl->m_gameState.m_unk1f8, false, this == pl->m_player1);
+			recordAction(btn, currentFrame, false, this == pl->m_player1);
 		}
 	}
 };
@@ -231,8 +231,9 @@ class $modify(GJBaseGameLayer)
 	{
 #if defined(__ANDROID__)
 		GJBaseGameLayer::update(dt);
+		++currentFrame;
 		return;
-#endif
+#else
 		if (!Settings::get<bool>("macrobot/frame_step/enabled", false) || !PlayLayer::get())
 		{
 			GJBaseGameLayer::update(dt);
@@ -251,6 +252,7 @@ class $modify(GJBaseGameLayer)
 
 		if (advanceHoldTime > 0.5)
 			targetSteps = PlayLayer::get()->m_gameState.m_unk1f8 + 1;
+#endif
 	}
 
 
@@ -598,9 +600,9 @@ void Macrobot::drawMacroTable()
 
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		ImGui::Text(pair.first.c_str());
+		ImGui::Text("%s", pair.first.c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(macro.author.c_str());
+		ImGui::Text("%s", macro.author.c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text("%.2f", macro.framerate);
 		ImGui::TableNextColumn();
@@ -624,7 +626,7 @@ void Macrobot::drawMacroTable()
 		if (GUI::button(("Play##macro" + pair.first).c_str()))
 		{
 
-			GameLevelManager::get()->downloadLevel(macro.levelInfo.id, true);
+			GameLevelManager::get()->downloadLevel(macro.levelInfo.id, true, 0);
 
 			auto level = GameLevelManager::get()->getSavedLevel(macro.levelInfo.id);
 
@@ -661,7 +663,7 @@ void Macrobot::drawMacroTable()
 
 bool Macrobot::clickBetweenFramesCheck()
 {
-	bool res = Loader::get()->getLoadedMod("syzzi.click_between_frames") && Loader::get()->getLoadedMod("syzzi.click_between_frames")->isEnabled();
+	bool res = Loader::get()->getLoadedMod("syzzi.click_between_frames") != nullptr;
 
 	if(res)
 	{
