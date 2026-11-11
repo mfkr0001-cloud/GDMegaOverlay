@@ -47,33 +47,33 @@ namespace {
 
         switcherLabel = cocos2d::CCLabelBMFont::create("", "bigFont.fnt");
         if (switcherLabel) {
-            switcherLabel->setScale(0.5f);
-            switcherLabel->setPosition(winSize.width / 2.f, bottom + 48.f);
+            switcherLabel->setScale(0.44f);
+            switcherLabel->setPosition(winSize.width / 2.f, bottom + 56.f);
             switcherLabel->setID("megaOverlay.startposSwitcher.label"_spr);
             switcherMenu->addChild(switcherLabel);
         }
 
         auto leftSprite = cocos2d::CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
         if (leftSprite) {
-            leftSprite->setScale(0.5f);
+            leftSprite->setScale(0.42f);
             auto leftButton = geode::cocos::CCMenuItemExt::createSpriteExtra(
                 leftSprite,
                 [](CCMenuItemSpriteExtra*) { change(false); }
             );
-            leftButton->setPosition(winSize.width / 2.f - 54.f, bottom + 20.f);
+            leftButton->setPosition(winSize.width / 2.f - 70.f, bottom + 20.f);
             leftButton->setID("megaOverlay.startposSwitcher.left"_spr);
             switcherMenu->addChild(leftButton);
         }
 
         auto rightSprite = cocos2d::CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
         if (rightSprite) {
-            rightSprite->setScale(0.5f);
+            rightSprite->setScale(0.42f);
             rightSprite->setFlipX(true);
             auto rightButton = geode::cocos::CCMenuItemExt::createSpriteExtra(
                 rightSprite,
                 [](CCMenuItemSpriteExtra*) { change(true); }
             );
-            rightButton->setPosition(winSize.width / 2.f + 54.f, bottom + 20.f);
+            rightButton->setPosition(winSize.width / 2.f + 70.f, bottom + 20.f);
             rightButton->setID("megaOverlay.startposSwitcher.right"_spr);
             switcherMenu->addChild(rightButton);
         }
