@@ -89,52 +89,53 @@ class $modify(MenuLayer)
 
 ImVec2 GUI::getJsonPosition(const std::string& name)
 {
-    if (!windowPositions.contains(name))
-    {
-        windowPositions[name]["x"] = .0f;
-        windowPositions[name]["y"] = .0f;
-    }
+    if (!windowPositions.contains(name) || !windowPositions[name].is_object())
+        windowPositions[name] = json::object();
 
-    auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
+    auto& entry = windowPositions[name];
+    if (!entry.contains("x")) entry["x"] = 0.0f;
+    if (!entry.contains("y")) entry["y"] = 0.0f;
 
-    if (windowPositions[name]["x"] > 1 || windowPositions[name]["y"] > 1)
-        winSize.size = cocos2d::CCSize(1.f, 1.f);
-
+    const auto viewport = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
+    const float x = entry.value("x", 0.0f);
+    const float y = entry.value("y", 0.0f);
+    // Older builds stored absolute pixels; current files store viewport fractions.
     return {
-        windowPositions[name]["x"].get<float>() * winSize.size.width,
-        windowPositions[name]["y"].get<float>() * winSize.size.height
+        (x >= -1.0f && x <= 1.0f) ? x * viewport.size.width : x,
+        (y >= -1.0f && y <= 1.0f) ? y * viewport.size.height : y
     };
 }
 
 void GUI::setJsonPosition(const std::string& name, ImVec2 pos)
 {
-    windowPositions[name]["x"] = pos.x;
-    windowPositions[name]["y"] = pos.y;
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    windowPositions[name]["x"] = display.x > 0 ? pos.x / display.x : pos.x;
+    windowPositions[name]["y"] = display.y > 0 ? pos.y / display.y : pos.y;
 }
 
 ImVec2 GUI::getJsonSize(const std::string& name, ImVec2 defaultSize)
 {
-    if (!windowPositions.contains(name) || !windowPositions[name].contains("w"))
+    if (!windowPositions.contains(name) || !windowPositions[name].is_object() ||
+        !windowPositions[name].contains("w") || !windowPositions[name].contains("h"))
     {
         windowPositions[name]["w"] = defaultSize.x;
         windowPositions[name]["h"] = defaultSize.y;
     }
 
-    auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
-
-    if (windowPositions[name]["w"] > 1 || windowPositions[name]["h"] > 1)
-        winSize.size = cocos2d::CCSize(1.f, 1.f);
-
+    const auto viewport = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
+    const float w = windowPositions[name].value("w", defaultSize.x);
+    const float h = windowPositions[name].value("h", defaultSize.y);
     return {
-        windowPositions[name]["w"].get<float>() * winSize.size.width,
-        windowPositions[name]["h"].get<float>() * winSize.size.height
+        (w > 0.0f && w <= 1.0f) ? w * viewport.size.width : w,
+        (h > 0.0f && h <= 1.0f) ? h * viewport.size.height : h
     };
 }
 
 void GUI::setJsonSize(const std::string& name, ImVec2 size)
 {
-    windowPositions[name]["w"] = size.x;
-    windowPositions[name]["h"] = size.y;
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    windowPositions[name]["w"] = display.x > 0 ? size.x / display.x : size.x;
+    windowPositions[name]["h"] = display.y > 0 ? size.y / display.y : size.y;
 }
 
 void GUI::init()
@@ -314,6 +315,7 @@ void GUI::addWindow(Window window)
     {
         window.position = getJsonPosition(window.name);
         window.size = getJsonSize(window.name, window.size);
+        window.fontScale = windowPositions[window.name].value("fontScale", 1.0f);
     }
     else
     {
@@ -356,14 +358,14 @@ void GUI::save()
 {
     for (Window& w : windows)
     {
-        windowPositions[w.name]["x"] = (float)w.position.x / (float)ImGui::GetIO().DisplaySize.x;
-        windowPositions[w.name]["y"] = (float)w.position.y / (float)ImGui::GetIO().DisplaySize.y;
-        windowPositions[w.name]["w"] = (float)w.size.x / (float)ImGui::GetIO().DisplaySize.x;
-        windowPositions[w.name]["h"] = (float)w.size.y / (float)ImGui::GetIO().DisplaySize.y;
+        setJsonPosition(w.name, w.position);
+        setJsonSize(w.name, w.size);
+        windowPositions[w.name]["fontScale"] = w.fontScale;
     }
 
+    std::filesystem::create_directories(Mod::get()->getSaveDir());
     std::ofstream f(Mod::get()->getSaveDir() / "windows.json");
-    f << windowPositions.dump(4);
+    if (f) f << windowPositions.dump(4);
     f.close();
 
     f.open(Mod::get()->getSaveDir() / "shortcuts.json");
@@ -474,7 +476,10 @@ void GUI::resetDefault()
         window.position = getJsonPosition(window.name);
         window.renderPosition = window.position;
         window.size = getJsonSize(window.name, window.size);
+        window.fontScale = windowPositions[window.name].value("fontScale", 1.0f);
+        window.geometryDirty = true;
     }
+    save();
 }
 
 void GUI::saveStyle(const std::filesystem::path& name)
