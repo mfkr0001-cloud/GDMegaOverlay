@@ -6,7 +6,6 @@
 
 #include <Geode/Geode.hpp>
 #include <cocos2d.h>
-
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/EndLevelLayer.hpp>
 
@@ -15,70 +14,119 @@ using namespace ReplayLastCheckpoint;
 
 class $modify(PlayLayer)
 {
-	void levelComplete()
-	{
-		levelCompleted = true;
-		PlayLayer::levelComplete();
-	}
+    void levelComplete()
+    {
+        levelCompleted = true;
+        PlayLayer::levelComplete();
+    }
 
-	void resetLevel()
-	{
-		levelCompleted = false;
-		PlayLayer::resetLevel();
-	}
+    void resetLevel()
+    {
+        levelCompleted = false;
+        PlayLayer::resetLevel();
+    }
 };
 
 class $modify(ButtonsClass, EndLevelLayer)
 {
-	void onReset(CCObject* sender)
-	{
-		levelCompleted = false;
+    void onReset(CCObject* sender)
+    {
+        levelCompleted = false;
 
-		// use m_fields to remove this amazing chain
-		this->getParent()->getParent()->removeFromParent();
+        // Close the end-level layer.
+        this->getParent()->getParent()->removeFromParent();
 
-		PlayLayer::get()->resetLevel();
-	}
+        PlayLayer::get()->resetLevel();
+    }
 
-	void customSetup()
-	{
-		EndLevelLayer::customSetup();
+    void customSetup()
+    {
+        EndLevelLayer::customSetup();
 
-		if (!Settings::get<bool>("level/replay_checkpoint") || !PlayLayer::get()->m_isPracticeMode) return;
+        auto playLayer = PlayLayer::get();
 
-		auto layer = reinterpret_cast<CCLayer*>(this->getChildren()->objectAtIndex(0));
-		CCMenu* buttonsMenu = nullptr;
+        if (!Settings::get<bool>("level/replay_checkpoint") ||
+            !playLayer ||
+            !playLayer->m_isPracticeMode)
+            return;
 
+        auto layer = typeinfo_cast<CCLayer*>(
+            this->getChildren()->objectAtIndex(0)
+        );
 
-		CCObject* object;
-		CCARRAY_FOREACH(layer->getChildren(), object)
-		{
-			if (auto menu = typeinfo_cast<CCMenu*>(object); menu && menu->getChildrenCount() > 1)
-				buttonsMenu = menu;
-		}
+        if (!layer)
+            return;
 
-		auto practiceSprite = cocos2d::CCSprite::createWithSpriteFrameName("GJ_practiceBtn_001.png");
-		practiceSprite->setScale(1.f);
-		auto practiceButton = CCMenuItemSpriteExtra::create(
-			practiceSprite,
-			buttonsMenu,
-			menu_selector(ButtonsClass::onReset)
-		);
+        CCMenu* buttonsMenu = nullptr;
 
-		if (buttonsMenu->getChildrenCount() == 2)
-		{
-			getChild<CCMenuItemSpriteExtra>(buttonsMenu, 0)->setPositionX(-100.f);
-			getChild<CCMenuItemSpriteExtra>(buttonsMenu, 1)->setPositionX(100.f);
-		}
-		else
-		{
-			getChild<CCMenuItemSpriteExtra>(buttonsMenu, 0)->setPositionX(-130.f);
-			getChild<CCMenuItemSpriteExtra>(buttonsMenu, 1)->setPositionX(130.f);
-			getChild<CCMenuItemSpriteExtra>(buttonsMenu, 2)->setPositionX(-45.f);
-			practiceButton->setPositionX(45.f);
-		}
+        // Geode v5 replacement for CCARRAY_FOREACH.
+        for (auto object : CCArrayExt(layer->getChildren()))
+        {
+            if (auto menu = typeinfo_cast<CCMenu*>(object);
+                menu && menu->getChildrenCount() > 1)
+            {
+                buttonsMenu = menu;
+                break;
+            }
+        }
 
-		practiceButton->setPositionY(-125.f);
-		buttonsMenu->addChild(practiceButton);
-	}
+        if (!buttonsMenu)
+            return;
+
+        auto practiceSprite =
+            cocos2d::CCSprite::createWithSpriteFrameName(
+                "GJ_practiceBtn_001.png"
+            );
+
+        if (!practiceSprite)
+            return;
+
+        practiceSprite->setScale(1.f);
+
+        auto practiceButton = CCMenuItemSpriteExtra::create(
+            practiceSprite,
+            buttonsMenu,
+            menu_selector(ButtonsClass::onReset)
+        );
+
+        if (!practiceButton)
+            return;
+
+        // Replacement for the removed getChild helper.
+        auto getButton = [&](unsigned int index)
+            -> CCMenuItemSpriteExtra*
+        {
+            if (index >= buttonsMenu->getChildrenCount())
+                return nullptr;
+
+            return typeinfo_cast<CCMenuItemSpriteExtra*>(
+                buttonsMenu->getChildren()->objectAtIndex(index)
+            );
+        };
+
+        if (buttonsMenu->getChildrenCount() == 2)
+        {
+            if (auto button = getButton(0))
+                button->setPositionX(-100.f);
+
+            if (auto button = getButton(1))
+                button->setPositionX(100.f);
+        }
+        else
+        {
+            if (auto button = getButton(0))
+                button->setPositionX(-130.f);
+
+            if (auto button = getButton(1))
+                button->setPositionX(130.f);
+
+            if (auto button = getButton(2))
+                button->setPositionX(-45.f);
+
+            practiceButton->setPositionX(45.f);
+        }
+
+        practiceButton->setPositionY(-125.f);
+        buttonsMenu->addChild(practiceButton);
+    }
 };
