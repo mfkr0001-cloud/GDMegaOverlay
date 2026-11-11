@@ -1,3 +1,4 @@
+
 #include "Widgets.h"
 #include "../Common.h"
 #include "../ConstData.h"
@@ -9,30 +10,31 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <Geode/Geode.hpp>
 #include <Geode/utils/web.hpp>
-using namespace geode::prelude;
 
-inline ImVec2 operator+(const ImVec2& a, const ImVec2& b)
-{
-	return {a.x + b.x, a.y + b.y};
-}
-inline ImVec2 operator-(const ImVec2& a, const ImVec2& b)
-{
-	return {a.x - b.x, a.y - b.y};
-}
+using namespace geode::prelude;
 
 bool findStringCaseInsensitive(const std::string& strHaystack, const std::string& strNeedle)
 {
-	auto it = std::search(strHaystack.begin(), strHaystack.end(), strNeedle.begin(), strNeedle.end(),
-						  [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); });
-	return (it != strHaystack.end());
+	auto it = std::search(
+		strHaystack.begin(),
+		strHaystack.end(),
+		strNeedle.begin(),
+		strNeedle.end(),
+		[](char ch1, char ch2) {
+			return std::toupper(ch1) == std::toupper(ch2);
+		}
+	);
+
+	return it != strHaystack.end();
 }
 
 bool GUI::button(const std::string& name)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
-		result = handleSearch(name, [&]()->bool {
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::Button(name.c_str());
 		});
 	}
@@ -46,9 +48,10 @@ bool GUI::button(const std::string& name)
 bool GUI::checkbox(const std::string& name, bool* value)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
-		result = handleSearch(name, [&]()->bool {
+		result = handleSearch(name, [&]() -> bool {
 			return customCheckbox(name.c_str(), value);
 		});
 	}
@@ -67,12 +70,11 @@ bool GUI::checkbox(const std::string& name, bool* value)
 bool GUI::checkbox(const std::string& name, const std::string& settingName, bool default_value)
 {
 	bool result = false;
-
 	bool value = Settings::get<bool>(settingName, default_value);
 
 	if (GUI::shouldRender())
 	{
-		result = handleSearch(name, [&]()->bool {
+		result = handleSearch(name, [&]() -> bool {
 			return customCheckbox(name.c_str(), &value);
 		});
 	}
@@ -95,8 +97,9 @@ bool GUI::hotkey(const std::string& name, int* keyPointer, const ImVec2& size_ar
 {
 	if (!shouldRender())
 		return false;
-	
+
 	ImGuiWindow* window = ImGui::GetCurrentWindow();
+
 	if (window->SkipItems)
 		return false;
 
@@ -106,20 +109,33 @@ bool GUI::hotkey(const std::string& name, int* keyPointer, const ImVec2& size_ar
 
 	const ImGuiID id = window->GetID(name.c_str());
 	const ImVec2 label_size = ImGui::CalcTextSize(name.c_str(), NULL, true);
-	ImVec2 size = ImGui::CalcItemSize(size_arg, ImGui::CalcItemWidth(), label_size.y + style.FramePadding.y * 2.0f);
-	const ImRect frame_bb(window->DC.CursorPos + ImVec2(label_size.x + style.ItemInnerSpacing.x, 0.0f),
-						  window->DC.CursorPos + size);
+
+	ImVec2 size = ImGui::CalcItemSize(
+		size_arg,
+		ImGui::CalcItemWidth(),
+		label_size.y + style.FramePadding.y * 2.0f
+	);
+
+	const ImRect frame_bb(
+		window->DC.CursorPos + ImVec2(label_size.x + style.ItemInnerSpacing.x, 0.0f),
+		window->DC.CursorPos + size
+	);
+
 	const ImRect total_bb(window->DC.CursorPos, frame_bb.Max);
 
 	ImGui::ItemSize(total_bb, style.FramePadding.y);
+
 	if (!ImGui::ItemAdd(total_bb, id))
 		return false;
 
-	const bool focus_requested = ImGui::FocusableItemRegister(window, g.ActiveId == id);
-	const bool focus_requested_by_code = focus_requested;
-	const bool focus_requested_by_tab = focus_requested && !focus_requested_by_code;
+	// ImGui 1.92.3: FocusableItemRegister больше не используется.
+	const bool focus_requested = false;
 
-	const bool hovered = ImGui::ItemHoverable(frame_bb, id);
+	const bool hovered = ImGui::ItemHoverable(
+		frame_bb,
+		id,
+		ImGuiItemFlags_None
+	);
 
 	if (hovered)
 	{
@@ -161,21 +177,29 @@ bool GUI::hotkey(const std::string& name, int* keyPointer, const ImVec2& size_ar
 			}
 		}
 
-		if (ImGui::IsKeyPressedMap(static_cast<ImGuiKey>(ImGuiKey_Escape)))
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape))
 		{
 			*keyPointer = 0;
 			ImGui::ClearActiveID();
 		}
 		else
+		{
 			*keyPointer = key;
+		}
 	}
 
 	char buf_display[64] = "None";
 
-	ImGui::RenderFrame(frame_bb.Min, frame_bb.Max, ImGui::GetColorU32(style.Colors[ImGuiCol_FrameBg]), true,
-					   style.FrameRounding);
+	ImGui::RenderFrame(
+		frame_bb.Min,
+		frame_bb.Max,
+		ImGui::GetColorU32(style.Colors[ImGuiCol_FrameBg]),
+		true,
+		style.FrameRounding
+	);
 
 	int displayKeyIndex = *keyPointer - 511;
+
 	if (displayKeyIndex < 0)
 		displayKeyIndex = 0;
 
@@ -184,13 +208,30 @@ bool GUI::hotkey(const std::string& name, int* keyPointer, const ImVec2& size_ar
 	else if (g.ActiveId == id)
 		snprintf(buf_display, sizeof(buf_display), "%s", "<Press a key>");
 
-	const ImRect clip_rect(frame_bb.Min.x, frame_bb.Min.y, frame_bb.Min.x + size.x, frame_bb.Min.y + size.y);
+	const ImRect clip_rect(
+		frame_bb.Min.x,
+		frame_bb.Min.y,
+		frame_bb.Min.x + size.x,
+		frame_bb.Min.y + size.y
+	);
+
 	ImVec2 render_pos = frame_bb.Min + style.FramePadding;
-	ImGui::RenderTextClipped(frame_bb.Min + style.FramePadding, frame_bb.Max - style.FramePadding, buf_display, NULL,
-							 NULL, style.ButtonTextAlign, &clip_rect);
+
+	ImGui::RenderTextClipped(
+		frame_bb.Min + style.FramePadding,
+		frame_bb.Max - style.FramePadding,
+		buf_display,
+		NULL,
+		NULL,
+		style.ButtonTextAlign,
+		&clip_rect
+	);
 
 	if (label_size.x > 0)
-		ImGui::RenderText(ImVec2(total_bb.Min.x, frame_bb.Min.y + style.FramePadding.y), name.c_str());
+		ImGui::RenderText(
+			ImVec2(total_bb.Min.x, frame_bb.Min.y + style.FramePadding.y),
+			name.c_str()
+		);
 
 	return value_changed;
 }
@@ -198,6 +239,7 @@ bool GUI::hotkey(const std::string& name, int* keyPointer, const ImVec2& size_ar
 bool GUI::modalPopup(const std::string& name, const std::function<void()>& popupFunction, int flags)
 {
 	bool open = true;
+
 	if (!GUI::isVisible || ImGui::BeginPopupModal(name.c_str(), &open, flags) || GUI::shortcutLoop)
 	{
 		popupFunction();
@@ -209,8 +251,13 @@ bool GUI::modalPopup(const std::string& name, const std::function<void()>& popup
 	return true;
 }
 
-bool GUI::alertPopup(const std::string& name, const std::string& content, const ButtonFunc& yesButton, const ButtonFunc& noButton,
-					 int flags)
+bool GUI::alertPopup(
+	const std::string& name,
+	const std::string& content,
+	const ButtonFunc& yesButton,
+	const ButtonFunc& noButton,
+	int flags
+)
 {
 	if (!ImGui::IsPopupOpen(name.c_str()))
 		ImGui::OpenPopup(name.c_str());
@@ -220,7 +267,10 @@ bool GUI::alertPopup(const std::string& name, const std::string& content, const 
 		ImVec2 displaySize = ImGui::GetIO().DisplaySize;
 		ImVec2 windowSize = ImGui::GetWindowSize();
 
-		ImGui::SetWindowPos({(displaySize.x - windowSize.x) * 0.5f, (displaySize.y - windowSize.y) * 0.5f});
+		ImGui::SetWindowPos({
+			(displaySize.x - windowSize.x) * 0.5f,
+			(displaySize.y - windowSize.y) * 0.5f
+		});
 
 		ImGui::Text("%s", content.c_str());
 
@@ -240,6 +290,7 @@ bool GUI::alertPopup(const std::string& name, const std::string& content, const 
 				ImGui::CloseCurrentPopup();
 			}
 		}
+
 		ImGui::EndPopup();
 	}
 
@@ -253,9 +304,15 @@ void GUI::arrowButton(const std::string& popupName)
 
 	float ww = ImGui::GetWindowSize().x;
 
-	GUI::sameLine((ww - (39 * GUI::uiSizeFactor)));
-	if (ImGui::ArrowButton((popupName + "arrow").c_str(), 1))
+	GUI::sameLine(ww - (39 * GUI::uiSizeFactor));
+
+	if (ImGui::ArrowButton(
+		(popupName + "arrow").c_str(),
+		ImGuiDir_Right
+	))
+	{
 		ImGui::OpenPopup(popupName.c_str());
+	}
 }
 
 bool GUI::combo(const std::string& name, int* value, const char* const items[], int itemsCount)
@@ -264,27 +321,34 @@ bool GUI::combo(const std::string& name, int* value, const char* const items[], 
 		return false;
 
 	GUI::pushItemWidth(80);
-	bool result = handleSearch(name, [&]()->bool {
-			return ImGui::Combo(name.c_str(), value, items, itemsCount);
+
+	bool result = handleSearch(name, [&]() -> bool {
+		return ImGui::Combo(name.c_str(), value, items, itemsCount);
 	});
+
 	GUI::popItemWidth();
+
 	return result;
 }
 
 bool GUI::inputInt(const std::string& name, int* value, int min, int max)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(50);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::InputInt(name.c_str(), value, 0);
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (*value < min)
 		*value = min;
+
 	if (*value > max)
 		*value = max;
 
@@ -294,12 +358,15 @@ bool GUI::inputInt(const std::string& name, int* value, int min, int max)
 bool GUI::inputText(const std::string& name, std::string* value, float width)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(width);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::InputText(name.c_str(), value);
 		});
+
 		GUI::popItemWidth();
 	}
 
@@ -309,22 +376,27 @@ bool GUI::inputText(const std::string& name, std::string* value, float width)
 bool GUI::inputInt2(const std::string& name, int* value, int min1, int max1, int min2, int max2)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(90);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::InputInt2(name.c_str(), value);
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (value[0] < min1)
 		value[0] = min1;
+
 	if (value[0] > max1)
 		value[0] = max1;
 
 	if (value[1] < min2)
 		value[1] = min2;
+
 	if (value[1] > max2)
 		value[1] = max2;
 
@@ -334,22 +406,27 @@ bool GUI::inputInt2(const std::string& name, int* value, int min1, int max1, int
 bool GUI::inputFloat2(const std::string& name, float* value, float min1, float max1, float min2, float max2)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(90);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::InputFloat2(name.c_str(), value);
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (value[0] < min1)
 		value[0] = min1;
+
 	if (value[0] > max1)
 		value[0] = max1;
 
 	if (value[1] < min2)
 		value[1] = min2;
+
 	if (value[1] > max2)
 		value[1] = max2;
 
@@ -359,17 +436,21 @@ bool GUI::inputFloat2(const std::string& name, float* value, float min1, float m
 bool GUI::inputFloat(const std::string& name, float* value, float min, float max)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(50);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::InputFloat(name.c_str(), value, 0, 0, "%.2f");
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (*value < min)
 		*value = min;
+
 	if (*value > max)
 		*value = max;
 
@@ -380,6 +461,7 @@ bool GUI::inputInt(const std::string& name, const std::string& setting, int defa
 {
 	int value = Settings::get<int>(setting, defaultValue);
 	bool result = false;
+
 	if (GUI::inputInt(name, &value, min, max))
 	{
 		Mod::get()->setSavedValue<int>(setting, value);
@@ -392,21 +474,27 @@ bool GUI::inputInt(const std::string& name, const std::string& setting, int defa
 bool GUI::inputUInt(const std::string& name, uint32_t* value, uint32_t min, uint32_t max)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(50);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			std::string val = std::to_string(*value);
 			bool res = ImGui::InputText(name.c_str(), &val);
-			if(res)
+
+			if (res)
 				*value = std::stoul(val);
+
 			return res;
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (*value < min)
 		*value = min;
+
 	if (*value > max)
 		*value = max;
 
@@ -417,6 +505,7 @@ bool GUI::inputFloat(const std::string& name, const std::string& setting, float 
 {
 	float value = Settings::get<float>(setting, defaultValue);
 	bool result = false;
+
 	if (GUI::inputFloat(name, &value, min, max))
 	{
 		Mod::get()->setSavedValue<float>(setting, value);
@@ -429,17 +518,21 @@ bool GUI::inputFloat(const std::string& name, const std::string& setting, float 
 bool GUI::dragInt(const std::string& name, int* value, int min, int max)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(50);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::DragInt(name.c_str(), value);
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (*value < min)
 		*value = min;
+
 	if (*value > max)
 		*value = max;
 
@@ -449,17 +542,21 @@ bool GUI::dragInt(const std::string& name, int* value, int min, int max)
 bool GUI::dragFloat(const std::string& name, float* value, float min, float max)
 {
 	bool result = false;
+
 	if (GUI::shouldRender())
 	{
 		GUI::pushItemWidth(50);
-		result = handleSearch(name, [&]()->bool {
+
+		result = handleSearch(name, [&]() -> bool {
 			return ImGui::DragFloat(name.c_str(), value);
 		});
+
 		GUI::popItemWidth();
 	}
 
 	if (*value < min)
 		*value = min;
+
 	if (*value > max)
 		*value = max;
 
@@ -471,12 +568,19 @@ bool GUI::colorEdit(const std::string& name, float* color, bool inputs, bool alp
 	if (!GUI::shouldRender())
 		return false;
 
-	return handleSearch(name, [&]()->bool
-	{
+	return handleSearch(name, [&]() -> bool {
 		if (alpha)
-			return ImGui::ColorEdit4(name.c_str(), color, inputs ? 0 : ImGuiColorEditFlags_NoInputs);
-		
-		return ImGui::ColorEdit3(name.c_str(), color, inputs ? 0 : ImGuiColorEditFlags_NoInputs);
+			return ImGui::ColorEdit4(
+				name.c_str(),
+				color,
+				inputs ? 0 : ImGuiColorEditFlags_NoInputs
+			);
+
+		return ImGui::ColorEdit3(
+			name.c_str(),
+			color,
+			inputs ? 0 : ImGuiColorEditFlags_NoInputs
+		);
 	});
 }
 
@@ -486,6 +590,7 @@ void GUI::marker(const std::string& title, const std::string& description)
 		return;
 
 	ImGui::TextDisabled("%s", title.c_str());
+
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
@@ -500,7 +605,9 @@ inline void AddUnderLine(ImColor col_)
 {
 	ImVec2 min = ImGui::GetItemRectMin();
 	ImVec2 max = ImGui::GetItemRectMax();
+
 	min.y = max.y;
+
 	ImGui::GetWindowDrawList()->AddLine(min, max, col_, 1.0f);
 }
 
@@ -512,6 +619,7 @@ void GUI::textURL(const std::string& text, const std::string& link)
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.3f, 1, 1));
 	ImGui::Text("%s", text.c_str());
 	ImGui::PopStyleColor();
+
 	if (ImGui::IsItemHovered())
 	{
 		if (ImGui::IsMouseClicked(0))
@@ -519,6 +627,7 @@ void GUI::textURL(const std::string& text, const std::string& link)
 			ImGui::FocusWindow(nullptr);
 			web::openLinkInBrowser(link.c_str());
 		}
+
 		AddUnderLine(GUI::loadedStyle.Colors[ImGuiCol_ButtonHovered]);
 		ImGui::SetTooltip("Open in browser\n%s", link.c_str());
 	}
@@ -533,11 +642,14 @@ void GUI::textURL(const std::string& text, const std::string& link)
 bool GUI::customCheckbox(const char* label, bool* v)
 {
 	using namespace ImGui;
+
 	ImGuiIO& io = ImGui::GetIO();
+
 	const float cc_sz = 3.0f * io.FontGlobalScale;
 	const float cc_pad = 10.0f;
 
 	ImGuiWindow* window = GetCurrentWindow();
+
 	if (window->SkipItems)
 		return false;
 
@@ -546,19 +658,37 @@ bool GUI::customCheckbox(const char* label, bool* v)
 	const ImGuiID id = window->GetID(label);
 	const ImVec2 label_size = CalcTextSize(label, NULL, true);
 
-	const ImRect check_bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(label_size.y + style.FramePadding.y * 2,
-																			  label_size.y + style.FramePadding.y * 2));
+	const ImRect check_bb(
+		window->DC.CursorPos,
+		window->DC.CursorPos + ImVec2(
+			label_size.y + style.FramePadding.y * 2,
+			label_size.y + style.FramePadding.y * 2
+		)
+	);
+
 	ItemSize({check_bb.GetWidth(), check_bb.GetHeight() - 3}, style.FramePadding.y);
 
 	ImRect total_bb = check_bb;
+
 	if (label_size.x > 0)
 		SameLine(0, style.ItemInnerSpacing.x);
-	const ImRect text_bb(window->DC.CursorPos + ImVec2(0, style.FramePadding.y),
-						 window->DC.CursorPos + ImVec2(0, style.FramePadding.y) + label_size);
+
+	const ImRect text_bb(
+		window->DC.CursorPos + ImVec2(0, style.FramePadding.y),
+		window->DC.CursorPos + ImVec2(0, style.FramePadding.y) + label_size
+	);
+
 	if (label_size.x > 0)
 	{
 		ItemSize({check_bb.GetWidth(), check_bb.GetHeight() - 3}, style.FramePadding.y);
-		total_bb = ImRect(check_bb.Min, ImVec2(text_bb.Max.x - cc_pad * 2.0f * io.FontGlobalScale, check_bb.Max.y));
+
+		total_bb = ImRect(
+			check_bb.Min,
+			ImVec2(
+				text_bb.Max.x - cc_pad * 2.0f * io.FontGlobalScale,
+				check_bb.Max.y
+			)
+		);
 	}
 
 	if (!ItemAdd(total_bb, id))
@@ -566,33 +696,60 @@ bool GUI::customCheckbox(const char* label, bool* v)
 
 	bool hovered, held;
 	bool pressed = ButtonBehavior(total_bb, id, &hovered, &held);
+
 	if (pressed)
 		*v = !(*v);
+
 	ImVec2 text_pos = text_bb.GetTL();
+
 	if (hovered)
 	{
 		ImVec2 text_size = text_bb.GetBR();
-		auto fill_color = ImGui::ColorConvertFloat4ToU32(ImVec4(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f));
+
+		auto fill_color = ImGui::ColorConvertFloat4ToU32(
+			ImVec4(
+				50.0f / 255.0f,
+				50.0f / 255.0f,
+				50.0f / 255.0f,
+				1.0f
+			)
+		);
+
 		window->DrawList->AddRectFilled(
 			ImVec2(check_bb.Min.x, check_bb.Min.y),
-			ImVec2(check_bb.Min.x + cc_sz + text_size.x - text_pos.x + cc_pad * 2.0f, check_bb.Max.y), fill_color,
-			style.FrameRounding);
+			ImVec2(
+				check_bb.Min.x + cc_sz + text_size.x - text_pos.x + cc_pad * 2.0f,
+				check_bb.Max.y
+			),
+			fill_color,
+			style.FrameRounding
+		);
 	}
+
 	if (*v)
 	{
-		window->DrawList->AddRectFilled(ImVec2(check_bb.Min.x, check_bb.Min.y),
-										ImVec2(check_bb.Min.x + cc_sz, check_bb.Max.y), GetColorU32(ImGuiCol_CheckMark),
-										style.FrameRounding);
+		window->DrawList->AddRectFilled(
+			ImVec2(check_bb.Min.x, check_bb.Min.y),
+			ImVec2(check_bb.Min.x + cc_sz, check_bb.Max.y),
+			GetColorU32(ImGuiCol_CheckMark),
+			style.FrameRounding
+		);
 	}
 	else
 	{
-		window->DrawList->AddRectFilled(ImVec2(check_bb.Min.x, check_bb.Min.y),
-										ImVec2(check_bb.Min.x + cc_sz, check_bb.Max.y), ImColor(32, 32, 32),
-										style.FrameRounding);
+		window->DrawList->AddRectFilled(
+			ImVec2(check_bb.Min.x, check_bb.Min.y),
+			ImVec2(check_bb.Min.x + cc_sz, check_bb.Max.y),
+			ImColor(32, 32, 32),
+			style.FrameRounding
+		);
 	}
 
 	if (label_size.x > 0.0f)
-		RenderText(ImVec2(check_bb.Min.x + cc_sz + cc_pad, text_pos.y), label);
+		RenderText(
+			ImVec2(check_bb.Min.x + cc_sz + cc_pad, text_pos.y),
+			label
+		);
 
 	return pressed;
 }
@@ -623,13 +780,13 @@ void GUI::popItemWidth()
 
 void GUI::tooltip(const std::string tooltip)
 {
-	if(ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("%s", tooltip.c_str());
 }
 
 bool GUI::handleSearch(const std::string& label, const std::function<bool()>& function)
 {
-	if(searchBar.size() > 0 && !findStringCaseInsensitive(label, searchBar))
+	if (searchBar.size() > 0 && !findStringCaseInsensitive(label, searchBar))
 	{
 		ImGui::BeginDisabled();
 		bool res = function();
