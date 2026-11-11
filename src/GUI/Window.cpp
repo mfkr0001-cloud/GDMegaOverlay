@@ -43,9 +43,13 @@ bool Window::visibleInScreen() {
 void Window::draw() {
     if (GUI::isVisible && visibleInScreen()) {
         if (maxSize.x != 0 && maxSize.y != 0) {
+            // Keep window width in actual ImGui screen pixels. Scaling the
+            // 200px min/max width by uiSizeFactor made Android windows only
+            // a few dozen pixels wide.
+            const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
             ImGui::SetNextWindowSizeConstraints(
-                {minSize.x * GUI::uiSizeFactor, minSize.y * GUI::uiSizeFactor},
-                {maxSize.x * GUI::uiSizeFactor, maxSize.y * GUI::uiSizeFactor}
+                {minSize.x, minSize.y * GUI::uiSizeFactor},
+                {displaySize.x * 0.95f, maxSize.y * GUI::uiSizeFactor}
             );
         }
 
