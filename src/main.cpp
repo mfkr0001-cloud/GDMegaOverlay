@@ -64,6 +64,8 @@ void initGUI()
 {
 	ImGui::GetPlatformIO().Platform_LocaleDecimalPoint = *localeconv()->decimal_point;
 	GUI::windows.clear();
+	GUI::windows.reserve(32);
+	GUI::windowReferences.clear();
 
 	GUI::Window generalWindow("General", [] {
 		float framerate = Settings::get<float>("general/fps/value", 60.f);
@@ -337,6 +339,40 @@ void initGUI()
 	GUI::addWindow(levelWindow);
 
 	GUI::Window menuSettings("Menu Settings", [] {
+        // Compact per-window layout editor. Coordinates and sizes are in screen pixels.
+        static int selectedWindow = 0;
+        if (GUI::shouldRender()) {
+            const int count = static_cast<int>(GUI::windows.size());
+            if (count > 0) {
+                selectedWindow = ImClamp(selectedWindow, 0, count - 1);
+                if (ImGui::BeginCombo("Edit Window", GUI::windows[selectedWindow].name.c_str())) {
+                    for (int i = 0; i < count; ++i) {
+                        const bool selected = selectedWindow == i;
+                        if (ImGui::Selectable(GUI::windows[i].name.c_str(), selected))
+                            selectedWindow = i;
+                        if (selected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+                GUI::Window& edited = GUI::windows[selectedWindow];
+                float xy[2] = { edited.position.x, edited.position.y };
+                if (GUI::inputFloat2("Position X/Y", xy, -10000.f, 10000.f, -10000.f, 10000.f)) {
+                    edited.position = ImVec2(xy[0], xy[1]);
+                    edited.renderPosition = edited.position;
+                    edited.geometryDirty = true;
+                }
+                float wh[2] = { edited.size.x, edited.size.y };
+                if (GUI::inputFloat2("Size W/H", wh, 80.f, 4000.f, 60.f, 4000.f)) {
+                    edited.size = ImVec2(wh[0], wh[1]);
+                    edited.geometryDirty = true;
+                }
+                GUI::inputFloat("Text Scale", &edited.fontScale, 0.5f, 2.5f);
+                if (GUI::button("Save Layout")) GUI::save();
+                GUI::sameLine();
+                if (GUI::button("Reset Layout")) GUI::resetDefault();
+            }
+        }
+
 		int snap = Settings::get<int>("menu/window/snap", 10);
 		int snapSize = Settings::get<int>("menu/window/size_snap", 10);
 		float transitionDuration = Settings::get<float>("menu/transition_duration", 0.35f);
