@@ -1,3 +1,4 @@
+
 #include "imgui_internal.h"
 
 #include <Geode/Geode.hpp>
@@ -8,7 +9,6 @@
 using namespace geode::prelude;
 
 #include "ConstData.h"
-#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-cocos.hpp>
 #include <misc/cpp/imgui_stdlib.h>
 #include <nlohmann/json.hpp>
@@ -62,9 +62,9 @@ void init()
 
 void initGUI()
 {
-	ImGui::GetCurrentContext()->PlatformLocaleDecimalPoint = *localeconv()->decimal_point;
+	ImGui::GetPlatformIO().Platform_LocaleDecimalPoint = *localeconv()->decimal_point;
 	GUI::windows.clear();
-	
+
 	GUI::Window generalWindow("General", [] {
 		float framerate = Settings::get<float>("general/fps/value", 60.f);
 		if (GUI::inputFloat("##FPSValue", &framerate, 1.f, 100000.f))
@@ -103,7 +103,7 @@ void initGUI()
 			ImGui::EndDisabled();
 
 		float speedhack = Settings::get<float>("general/speedhack/value", 1.f);
-		if (GUI::inputFloat("##SpeedhackValue", &speedhack), 0.0000001f, 1000.f)
+		if (GUI::inputFloat("##SpeedhackValue", &speedhack, 0.0000001f, 1000.f))
 		{
 			if (speedhack > 0)
 				Mod::get()->setSavedValue<float>("general/speedhack/value", speedhack);
@@ -196,7 +196,6 @@ void initGUI()
 			ImGuiWindowFlags_AlwaysAutoResize
 		);
 
-
 		JsonPatches::drawFromPatches(JsonPatches::global);
 	});
 	globalWindow.position = {300, 50};
@@ -221,7 +220,7 @@ void initGUI()
 			ImGuiWindowFlags_AlwaysAutoResize);
 
 		GUI::checkbox("Smart Startpos", "level/smart_startpos");
-		
+
 		GUI::checkbox("Show Hitboxes", "level/show_hitbox/enabled");
 		GUI::arrowButton("Show Hitboxes Settings");
 		GUI::modalPopup(
@@ -387,10 +386,10 @@ void initGUI()
 			ImGuiWindowFlags_AlwaysAutoResize);
 
 		auto blurSettings = [] {
-				GUI::inputFloat("Blur Darkness", "menu/blur/darkness", 1.f, 0.1f, 1.f);
-				GUI::inputFloat("Blur Size", "menu/blur/size", 1.f, 0.1f, 10.f);
-				GUI::inputInt("Blur Steps", "menu/blur/steps", 10, 5, 20);
-			};
+			GUI::inputFloat("Blur Darkness", "menu/blur/darkness", 1.f, 0.1f, 1.f);
+			GUI::inputFloat("Blur Size", "menu/blur/size", 1.f, 0.1f, 10.f);
+			GUI::inputInt("Blur Steps", "menu/blur/steps", 10, 5, 20);
+		};
 
 		GUI::checkbox("Window Shadow", "menu/box_shadow/enabled", true);
 		GUI::tooltip("Makes windows cast a box shadow underneath itself.");
@@ -403,18 +402,18 @@ void initGUI()
 			},
 			ImGuiWindowFlags_AlwaysAutoResize);
 
-		if(GUI::checkbox("Blur Background", "menu/blur/enabled"))
+		if (GUI::checkbox("Blur Background", "menu/blur/enabled"))
 			Blur::compileBlurShader();
-		
+
 		GUI::tooltip("Applies a blur effect to the window background.\nWARNING: this option is very performance heavy!");
-		
+
 		GUI::arrowButton("Blur Settings##0");
 		GUI::modalPopup(
 			"Blur Settings##0",
 			blurSettings,
 			ImGuiWindowFlags_AlwaysAutoResize);
 
-		if(GUI::checkbox("Blur GD", "menu/blur/gd"))
+		if (GUI::checkbox("Blur GD", "menu/blur/gd"))
 			Blur::compileBlurShader();
 
 		GUI::tooltip("Applies a blur effect to the game while the menu is open.\nWARNING: this option is very performance heavy!");
@@ -431,7 +430,6 @@ void initGUI()
 			Settings::get<float>("menu/window/color/b", .0f)
 		};
 
-
 		if (GUI::colorEdit("Window Color", windowColor))
 		{
 			Mod::get()->setSavedValue<float>("menu/window/color/r", windowColor[0]);
@@ -445,16 +443,16 @@ void initGUI()
 		if (GUI::hotkey("Toggle Menu", &togglekey))
 			Mod::get()->setSavedValue<int>("menu/togglekey", togglekey);
 
-		if(GUI::styleCombo.draw())
+		if (GUI::styleCombo.draw())
 		{
 			GUI::loadStyle(GUI::styleCombo.getSelectedFilePath());
 			GUI::setFont(GUI::fontCombo.getSelectedFilePath());
 		}
 
-		if(GUI::fontCombo.draw())
+		if (GUI::fontCombo.draw())
 			GUI::setFont(GUI::fontCombo.getSelectedFilePath());
 
-		if(GUI::shouldRender())
+		if (GUI::shouldRender())
 			ImGui::InputText("Search", &GUI::searchBar);
 
 #if defined(_WIN32)
@@ -465,32 +463,31 @@ void initGUI()
 #endif
 		if (GUI::button("Reset Windows"))
 			GUI::resetDefault();
-		if(GUI::button("Show Style Editor"))
+		if (GUI::button("Show Style Editor"))
 			GUI::windowReferences["Style Editor"]->enabled = true;
 	});
 	menuSettings.position = {1050, 250};
 	menuSettings.size.y = 300;
 	GUI::addWindow(menuSettings);
 
-	GUI::Window playerWindow("Player", [] { 
+	GUI::Window playerWindow("Player", [] {
 		JsonPatches::drawFromPatches(JsonPatches::player);
-		
+
 		GUI::checkbox("Show Trajectory", "player/show_trajectory/enabled");
 
 		GUI::arrowButton("Show Trajectory Settings");
 		GUI::modalPopup(
 			"Show Trajectory Settings",
-			[]{
+			[] {
 				GUI::checkbox("Performance Mode", "player/show_trajectory/performance_mode");
 				GUI::tooltip("Increases performance at the cost of accuracy");
 			}, ImGuiWindowFlags_AlwaysAutoResize);
-
 
 		GUI::checkbox("Custom Wave Trail", "player/trail/enabled");
 		GUI::arrowButton("Wave Customization");
 		GUI::modalPopup(
 			"Wave Customization",
-			[]{
+			[] {
 				GUI::inputFloat("Wave Trail Size", "player/trail/size", 1.f, 0.f, 100.f);
 
 				float trailColor[3]{
@@ -537,7 +534,7 @@ void initGUI()
 	recorder.size.y = 450;
 	GUI::addWindow(recorder);
 
-	GUI::Window styleEditor("Style Editor", []{
+	GUI::Window styleEditor("Style Editor", [] {
 		GUI::drawStyleEditor();
 	});
 	styleEditor.addFlag(ImGuiWindowFlags_MenuBar);
@@ -546,8 +543,6 @@ void initGUI()
 	styleEditor.enabled = false;
 	GUI::addWindow(styleEditor);
 }
-
-
 
 void render()
 {
@@ -562,10 +557,10 @@ $on_mod(Loaded)
 
 	init();
 
-	ImGuiCocos::get().setup([]{
+	ImGuiCocos::get().setup([] {
 		GUI::init();
 		initGUI();
-	}).draw([]{
+	}).draw([] {
 		render();
 	});
 	OverlayInput::install();
