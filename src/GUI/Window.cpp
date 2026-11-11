@@ -45,8 +45,8 @@ void Window::draw() {
     if (GUI::isVisible && visibleInScreen()) {
         if (maxSize.x != 0 && maxSize.y != 0) {
             const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-            const float minWidth = displaySize.x * 0.18f;
-            const float maxWidth = displaySize.x * 0.24f;
+            const float minWidth = displaySize.x * 0.098f;
+            const float maxWidth = displaySize.x * 0.112f;
             ImGui::SetNextWindowSizeConstraints(
                 {minWidth, minSize.y * GUI::uiSizeFactor},
                 {maxWidth, maxSize.y * GUI::uiSizeFactor}
@@ -63,7 +63,7 @@ void Window::draw() {
         else
             ImGui::SetNextWindowBgAlpha(windowTransparency);
 
-        ImGui::Begin(name.c_str(), nullptr, flags | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+        ImGui::Begin(name.c_str(), nullptr, flags);
 
         if (Settings::get<bool>("menu/title_gradient/enabled", true))
             customTitlebar();
