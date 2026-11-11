@@ -1,3 +1,4 @@
+
 #include "Settings.hpp"
 
 #include <Geode/Geode.hpp>
@@ -18,11 +19,11 @@ GameObject* getClosestObject(std::vector<GameObject*>& vec, StartPosObject* star
 
     std::sort(vec.begin(), vec.end(), compareXPos);
 
-    for(auto obj : vec)
+    for (auto obj : vec)
     {
-        if(obj->getPositionX() - 10 > startPos->getPositionX())
+        if (obj->getPositionX() - 10 > startPos->getPositionX())
             break;
-        else if(obj->getPositionX() - 10 < startPos->getPositionX())
+        else if (obj->getPositionX() - 10 < startPos->getPositionX())
             closest = obj;
     }
 
@@ -31,7 +32,10 @@ GameObject* getClosestObject(std::vector<GameObject*>& vec, StartPosObject* star
 
 void setupStartPos(StartPosObject* startPos)
 {
-    LevelSettingsObject* startPosSettings = (LevelSettingsObject*)startPos->m_unknown;
+    if (!startPos || !startPos->m_startSettings)
+        return;
+
+    LevelSettingsObject* startPosSettings = startPos->m_startSettings;
     LevelSettingsObject* levelSettings = PlayLayer::get()->m_levelSettings;
 
     startPosSettings->m_startDual = levelSettings->m_startDual;
@@ -40,65 +44,65 @@ void setupStartPos(StartPosObject* startPos)
     startPosSettings->m_startSpeed = levelSettings->m_startSpeed;
 
     GameObject* obj = getClosestObject(dualPortals, startPos);
-    if(obj)
+    if (obj)
         startPosSettings->m_startDual = obj->m_objectID == 286;
 
     obj = getClosestObject(gamemodePortals, startPos);
-    if(obj)
+    if (obj)
     {
-        switch(obj->m_objectID)
+        switch (obj->m_objectID)
         {
             case 12:
-				startPosSettings->m_startMode = 0;
-				break;
-			case 13:
-				startPosSettings->m_startMode = 1;
-				break;
-			case 47:
-				startPosSettings->m_startMode = 2;
-				break;
-			case 111:
-				startPosSettings->m_startMode = 3;
-				break;
-			case 660:
-				startPosSettings->m_startMode = 4;
-				break;
-			case 745:
-				startPosSettings->m_startMode = 5;
-				break;
-			case 1331:
-				startPosSettings->m_startMode = 6;
-				break;
+                startPosSettings->m_startMode = 0;
+                break;
+            case 13:
+                startPosSettings->m_startMode = 1;
+                break;
+            case 47:
+                startPosSettings->m_startMode = 2;
+                break;
+            case 111:
+                startPosSettings->m_startMode = 3;
+                break;
+            case 660:
+                startPosSettings->m_startMode = 4;
+                break;
+            case 745:
+                startPosSettings->m_startMode = 5;
+                break;
+            case 1331:
+                startPosSettings->m_startMode = 6;
+                break;
             case 1933:
-				startPosSettings->m_startMode = 7;
-				break;
+                startPosSettings->m_startMode = 7;
+                break;
         }
     }
 
     obj = getClosestObject(miniPortals, startPos);
-    if(obj)
+    if (obj)
         startPosSettings->m_startMini = obj->m_objectID == 101;
 
     obj = getClosestObject(speedChanges, startPos);
-    if(obj)
+    if (obj)
     {
-        switch(obj->m_objectID)
+        switch (obj->m_objectID)
         {
             case 200:
-				startPosSettings->m_startSpeed = Speed::Slow;
-				break;
-			case 201:
-				startPosSettings->m_startSpeed = Speed::Normal;
-				break;
-			case 202:
-				startPosSettings->m_startSpeed = Speed::Fast;
-				break;
-			case 203:
-				startPosSettings->m_startSpeed = Speed::Faster;
-				break;
-			case 1334:
-				startPosSettings->m_startSpeed = Speed::Fastest;
-				break;
+                startPosSettings->m_startSpeed = Speed::Slow;
+                break;
+            case 201:
+                startPosSettings->m_startSpeed = Speed::Normal;
+                break;
+            case 202:
+                startPosSettings->m_startSpeed = Speed::Fast;
+                break;
+            case 203:
+                startPosSettings->m_startSpeed = Speed::Faster;
+                break;
+            case 1334:
+                startPosSettings->m_startSpeed = Speed::Fastest;
+                break;
         }
     }
 }
@@ -110,7 +114,6 @@ class $modify(PlayLayer)
         dualPortals.clear();
         gamemodePortals.clear();
         miniPortals.clear();
-        miniPortals.clear();
         speedChanges.clear();
         mirrorPortals.clear();
         startPositions.clear();
@@ -120,9 +123,9 @@ class $modify(PlayLayer)
 
     void resetLevel()
     {
-        if(Settings::get<bool>("level/smart_startpos", false))
+        if (Settings::get<bool>("level/smart_startpos", false))
         {
-            for(StartPosObject* obj : startPositions)
+            for (StartPosObject* obj : startPositions)
                 setupStartPos(obj);
         }
 
@@ -133,40 +136,45 @@ class $modify(PlayLayer)
     {
         PlayLayer::addObject(obj);
 
-        switch(obj->m_objectID)
+        switch (obj->m_objectID)
         {
             case 31:
                 startPositions.push_back((StartPosObject*)obj);
                 break;
-			case 12:
-			case 13:
-			case 47:
-			case 111:
-			case 660:
-			case 745:
-			case 1331:
+
+            case 12:
+            case 13:
+            case 47:
+            case 111:
+            case 660:
+            case 745:
+            case 1331:
             case 1933:
-				gamemodePortals.push_back(obj);
-				break;
-			case 45:
-			case 46:
-				mirrorPortals.push_back(obj);
-				break;
-			case 99:
-			case 101:
-				miniPortals.push_back(obj);
-				break;
-			case 286:
-			case 287:
-				dualPortals.push_back(obj);
-				break;
-			case 200:
-			case 201:
-			case 202:
-			case 203:
-			case 1334:
-				speedChanges.push_back(obj);
-				break;
+                gamemodePortals.push_back(obj);
+                break;
+
+            case 45:
+            case 46:
+                mirrorPortals.push_back(obj);
+                break;
+
+            case 99:
+            case 101:
+                miniPortals.push_back(obj);
+                break;
+
+            case 286:
+            case 287:
+                dualPortals.push_back(obj);
+                break;
+
+            case 200:
+            case 201:
+            case 202:
+            case 203:
+            case 1334:
+                speedChanges.push_back(obj);
+                break;
         }
     }
 };
