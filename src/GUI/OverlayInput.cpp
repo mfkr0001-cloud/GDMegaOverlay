@@ -9,6 +9,8 @@
 #include <Geode/modify/CCScene.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
+#include <Geode/cocos/CCTextureCache.h>
+#include <Geode/cocos/CCTexture2D.h>
 #include <imgui-cocos.hpp>
 #include <imgui_internal.h>
 
@@ -33,6 +35,8 @@ namespace {
 
     ImVec2 s_buttonPosition(-1.f, -1.f);
     bool s_buttonPositionLoaded = false;
+    cocos2d::CCTexture2D* s_buttonTexture = nullptr;
+    bool s_buttonTextureAttempted = false;
 
     ImVec2 s_primaryPosition(0.f, 0.f);
     ImVec2 s_secondaryPosition(0.f, 0.f);
@@ -123,10 +127,26 @@ namespace {
         s_buttonPosition = clampToScreen(s_buttonPosition, screen, kButtonRadius + 2.f);
 
         ImDrawList* draw = ImGui::GetForegroundDrawList();
-        // A subtle shadow keeps the Easy icon visible over bright gameplay scenes.
+        // A subtle shadow keeps the icon visible over bright gameplay scenes.
         draw->AddCircleFilled(ImVec2(s_buttonPosition.x + 1.f, s_buttonPosition.y + 3.f),
             kButtonRadius + 1.f, IM_COL32(0, 0, 0, 90), 48);
-        drawEasyFace(draw, s_buttonPosition, kButtonRadius);
+
+        // The user-provided image must be placed at res/overlay_icon.png.
+        // Keep the procedural face as a safe fallback if the image is absent.
+        if (!s_buttonTextureAttempted) {
+            s_buttonTextureAttempted = true;
+            const auto iconPath = (Mod::get()->getResourcesDir() / "overlay_icon.png").string();
+            s_buttonTexture = cocos2d::CCTextureCache::get()->addImage(iconPath.c_str(), true);
+        }
+
+        if (s_buttonTexture) {
+            const ImVec2 size(kButtonRadius * 2.f, kButtonRadius * 2.f);
+            const ImVec2 min(s_buttonPosition.x - kButtonRadius, s_buttonPosition.y - kButtonRadius);
+            const ImVec2 max(s_buttonPosition.x + kButtonRadius, s_buttonPosition.y + kButtonRadius);
+            draw->AddImage((ImTextureID)(intptr_t)s_buttonTexture->getName(), min, max);
+        } else {
+            drawEasyFace(draw, s_buttonPosition, kButtonRadius);
+        }
     }
 
     void drawCloseButtonAndCursor() {
