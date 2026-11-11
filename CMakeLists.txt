@@ -28,6 +28,11 @@ file(GLOB SOURCES
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
+# ImGui math operators: define before including any ImGui headers
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+  IMGUI_DEFINE_MATH_OPERATORS
+)
+
 if (NOT DEFINED ENV{GEODE_SDK})
   message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")
 else()
