@@ -61,7 +61,7 @@ void init()
 }
 
 namespace {
-    constexpr int kDefaultLayoutRevision = 2;
+    constexpr int kDefaultLayoutRevision = 3;
     bool pendingDefaultLayoutSave = false;
 }
 
@@ -464,9 +464,9 @@ void initGUI()
 			ImGuiWindowFlags_AlwaysAutoResize);
 
 		float windowColor[3]{
-			Settings::get<float>("menu/window/color/r", 1.f),
-			Settings::get<float>("menu/window/color/g", .0f),
-			Settings::get<float>("menu/window/color/b", .0f)
+			Settings::get<float>("menu/window/color/r", 0.90f),
+			Settings::get<float>("menu/window/color/g", 0.18f),
+			Settings::get<float>("menu/window/color/b", 0.63f)
 		};
 
 		if (GUI::colorEdit("Window Color", windowColor))
