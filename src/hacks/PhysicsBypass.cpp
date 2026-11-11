@@ -24,7 +24,7 @@ void PhysicsBypass::calculateTickrate()
 {
 #if defined(__ANDROID__)
 	return;
-#endif
+#else
 	float tps = Common::getTPS();
 	util::Write<float>(base::get() + 0x49D548, 1.f / tps);
 	
@@ -38,4 +38,5 @@ void PhysicsBypass::calculateTickrate()
 		PlayLayer::get()->m_level->m_timestamp = timestamp * timestampMultiplier;
 		PlayLayer::get()->m_gameState.m_unk1f8 *= stepsMultiplier;
 	}
+#endif
 }
