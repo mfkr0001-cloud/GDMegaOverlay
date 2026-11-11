@@ -60,6 +60,11 @@ void init()
 	});
 }
 
+namespace {
+    constexpr int kDefaultLayoutRevision = 2;
+    bool pendingDefaultLayoutSave = false;
+}
+
 void initGUI()
 {
 	ImGui::GetPlatformIO().Platform_LocaleDecimalPoint = *localeconv()->decimal_point;
@@ -576,11 +581,27 @@ void initGUI()
 	styleEditor.maxSize = {1000, 1000};
 	styleEditor.enabled = false;
 	GUI::addWindow(styleEditor);
+
+    // Apply the refreshed layout once after an update. Save it on the first
+    // render frame, when ImGui already has a valid display size.
+    const int appliedRevision = Mod::get()->getSavedValue<int>("menu/default_layout_revision", 0);
+    if (appliedRevision < kDefaultLayoutRevision) {
+        GUI::resetDefault();
+        pendingDefaultLayoutSave = true;
+    }
 }
 
 void render()
 {
 	GUI::draw();
+
+	if (pendingDefaultLayoutSave && ImGui::GetIO().DisplaySize.x > 0.f) {
+		GUI::save();
+		Mod::get()->setSavedValue<int>("menu/default_layout_revision", kDefaultLayoutRevision);
+		Mod::get()->saveData();
+		pendingDefaultLayoutSave = false;
+	}
+
 	OverlayInput::draw();
 	GUI::setStyle();
 }
