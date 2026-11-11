@@ -19,10 +19,10 @@ using namespace StartposSwitcher;
 using namespace geode::prelude;
 
 class $modify(CCKeyboardDispatcher) {
-	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr)
+	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr, double time)
 	{
 		if (!down || arr)
-			return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr);
+			return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr, time);
 		
 		int leftKey = Settings::get<int>("level/startpos_switcher/left", ImGuiKey_LeftArrow);
 		int rightKey = Settings::get<int>("level/startpos_switcher/right", ImGuiKey_RightArrow);
@@ -34,7 +34,7 @@ class $modify(CCKeyboardDispatcher) {
 		else if (convertedKey == rightKey)
 			change(true);
 
-		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr);
+		return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, arr, time);
 	}
 };
 
