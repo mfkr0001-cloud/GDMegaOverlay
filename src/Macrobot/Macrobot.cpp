@@ -2,7 +2,7 @@
 #include "../Common.h"
 #include "../ConstData.h"
 #include "../GUI/GUI.h"
-#include "../Hacks/ShowTrajectory.h"
+#include "../hacks/ShowTrajectory.h"
 
 #include "../util.hpp"
 #include "AudioRecord.h"
@@ -14,7 +14,7 @@
 
 #include "Macrobot.h"
 #include "Clickpacks.h"
-#include "../Hacks/PhysicsBypass.h"
+#include "../hacks/PhysicsBypass.h"
 #include "Macrobot/MacroEditor.h"
 
 #include <Geode/Geode.hpp>
