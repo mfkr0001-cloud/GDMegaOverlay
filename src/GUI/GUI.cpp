@@ -194,13 +194,6 @@ void GUI::draw()
     uiSizeFactor = CCDirector::sharedDirector()->getOpenGLView()->getFrameSize().width / 1920.0f;
     uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
 
-#if defined(__ANDROID__)
-    // Android overlay menus were oversized on high-density screens.
-    // Scale the whole ImGui menu (widgets, spacing and font) down independently
-    // from the floating launcher button.
-    uiSizeFactor *= 0.35f;
-#endif
-
     if (!isVisible && !shortcutLoop)
         return;
 
