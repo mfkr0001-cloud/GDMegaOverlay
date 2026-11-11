@@ -321,8 +321,6 @@ namespace {
             if (s_primaryTouch != -1)
                 return false;
 
-            // Не перехватываем касания, если меню закрыто
-            // и игра не находится на паузе.
             if (!GUI::toggled && !s_isPaused)
                 return false;
 
@@ -441,12 +439,12 @@ namespace {
             scene->addChild(layer, INT_MAX, kTouchLayerTag);
         }
     }
-}
+};
 
-// Отслеживаем появление и закрытие окна паузы.
+// Отслеживаем вход и выход из меню паузы.
 class $modify(PauseLayer) {
-    void customSetup() {
-        PauseLayer::customSetup();
+    void onEnter() {
+        PauseLayer::onEnter();
         OverlayInput::setPaused(true);
     }
 
@@ -456,7 +454,7 @@ class $modify(PauseLayer) {
     }
 };
 
-// Повторно устанавливаем слой при смене сцены.
+// Устанавливаем слой при каждой смене сцены.
 class $modify(CCScene) {
     void onEnter() {
         CCScene::onEnter();
