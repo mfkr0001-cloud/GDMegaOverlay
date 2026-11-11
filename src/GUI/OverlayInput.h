@@ -1,7 +1,7 @@
 #pragma once
 
 namespace OverlayInput {
-    // Installs the Android floating button and its touch bridge into the active scene.
+    // Floating control is attached directly to the main menu and pause layer on Android.
     void install();
 
     // Draws the ImGui close control while the overlay menu is open.
