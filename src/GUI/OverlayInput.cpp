@@ -41,10 +41,10 @@ namespace {
         const ImVec2 screen = ImGui::GetIO().DisplaySize;
 
         ImGui::SetNextWindowPos(
-            ImVec2(std::max(8.f, screen.x - 48.f), 8.f),
+            ImVec2(std::max(8.f, screen.x - 42.f), 8.f),
             ImGuiCond_Always
         );
-        ImGui::SetNextWindowSize(ImVec2(40.f, 40.f), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(34.f, 34.f), ImGuiCond_Always);
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
@@ -58,7 +58,8 @@ namespace {
             ImGuiWindowFlags_NoSavedSettings |
             ImGuiWindowFlags_NoFocusOnAppearing
         )) {
-            if (ImGui::Button("×", ImVec2(40.f, 40.f)))
+            ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+            if (ImGui::Button("×", ImVec2(34.f, 34.f)))
                 GUI::toggle();
         }
 
@@ -72,7 +73,7 @@ namespace {
         CCPoint m_target = CCPoint(0.f, 0.f);
         CCPoint m_lastTouch = CCPoint(0.f, 0.f);
         CCPoint m_touchStart = CCPoint(0.f, 0.f);
-        float m_scale = 0.30f;
+        float m_scale = 0.26f;
         bool m_dragged = false;
         bool m_registered = false;
 
