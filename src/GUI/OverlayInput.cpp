@@ -8,7 +8,7 @@
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CCScene.hpp>
-#include <Geode/modify/PauseLayer.hpp>
+#include <Geode/modify/MenuLayer.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include <Geode/cocos/textures/CCTextureCache.h>
 #include <Geode/cocos/textures/CCTexture2D.h>
@@ -27,8 +27,6 @@ namespace {
     constexpr int kTouchLayerTag = 0x47444D;
     constexpr float kButtonRadius = 28.f;
     constexpr float kDragThreshold = 8.f;
-
-    bool s_isPaused = false;
 
     enum class TouchMode {
         None,
@@ -54,8 +52,9 @@ namespace {
         const ImVec2& center,
         float radius
     ) {
-        float dx = point.x - center.x;
-        float dy = point.y - center.y;
+        const float dx = point.x - center.x;
+        const float dy = point.y - center.y;
+
         return dx * dx + dy * dy <= radius * radius;
     }
 
@@ -80,8 +79,9 @@ namespace {
         auto winSize = CCDirector::sharedDirector()->getWinSize();
         auto display = ImGui::GetIO().DisplaySize;
 
-        if (winSize.width <= 0.f || winSize.height <= 0.f)
+        if (winSize.width <= 0.f || winSize.height <= 0.f) {
             return ImVec2(0.f, 0.f);
+        }
 
         return ImVec2(
             location.x * display.x / winSize.width,
@@ -101,7 +101,11 @@ namespace {
             "overlay/button-y", 0.50f
         );
 
-        s_buttonPosition = ImVec2(x * screen.x, y * screen.y);
+        s_buttonPosition = ImVec2(
+            x * screen.x,
+            y * screen.y
+        );
+
         s_buttonPosition = clampPosition(s_buttonPosition, screen);
         s_buttonPositionLoaded = true;
     }
@@ -128,8 +132,20 @@ namespace {
         const ImU32 outline = IM_COL32(210, 235, 255, 255);
         const ImU32 white = IM_COL32(255, 255, 255, 255);
 
-        draw->AddCircleFilled(center, kButtonRadius, blue, 48);
-        draw->AddCircle(center, kButtonRadius, outline, 48, 2.f);
+        draw->AddCircleFilled(
+            center,
+            kButtonRadius,
+            blue,
+            48
+        );
+
+        draw->AddCircle(
+            center,
+            kButtonRadius,
+            outline,
+            48,
+            2.f
+        );
 
         float eyeY = center.y - kButtonRadius * 0.16f;
         float eyeOffset = kButtonRadius * 0.31f;
@@ -147,6 +163,7 @@ namespace {
         );
 
         draw->PathClear();
+
         draw->PathArcTo(
             ImVec2(center.x, center.y + kButtonRadius * 0.02f),
             kButtonRadius * 0.43f,
@@ -170,12 +187,19 @@ namespace {
             return;
 
         loadButtonPosition(screen);
-        s_buttonPosition = clampPosition(s_buttonPosition, screen);
+
+        s_buttonPosition = clampPosition(
+            s_buttonPosition,
+            screen
+        );
 
         ImDrawList* draw = ImGui::GetForegroundDrawList();
 
         draw->AddCircleFilled(
-            ImVec2(s_buttonPosition.x + 1.f, s_buttonPosition.y + 3.f),
+            ImVec2(
+                s_buttonPosition.x + 1.f,
+                s_buttonPosition.y + 3.f
+            ),
             kButtonRadius + 1.f,
             IM_COL32(0, 0, 0, 90),
             48
@@ -221,7 +245,10 @@ namespace {
         ImVec2 screen = io.DisplaySize;
 
         ImGui::SetNextWindowPos(
-            ImVec2(std::max(8.f, screen.x - 60.f), 10.f),
+            ImVec2(
+                std::max(8.f, screen.x - 60.f),
+                10.f
+            ),
             ImGuiCond_Always
         );
 
@@ -267,6 +294,7 @@ namespace {
     void resetTouch() {
         if (ImGui::GetCurrentContext()) {
             ImGuiIO& io = ImGui::GetIO();
+
             io.AddMouseButtonEvent(0, false);
             io.AddMouseButtonEvent(1, false);
         }
@@ -321,39 +349,38 @@ namespace {
             if (s_primaryTouch != -1)
                 return false;
 
-            if (!GUI::toggled && !s_isPaused)
-                return false;
-
             ImVec2 point = getTouchPosition(touch);
             ImVec2 screen = ImGui::GetIO().DisplaySize;
 
-            if (!GUI::toggled) {
-                loadButtonPosition(screen);
-
-                if (!pointInsideCircle(
-                    point,
-                    s_buttonPosition,
-                    kButtonRadius + 14.f
-                )) {
-                    return false;
-                }
-
+            // Если меню открыто, передаём касания в ImGui.
+            if (GUI::toggled) {
                 s_primaryTouch = touch->getID();
-                s_touchMode = TouchMode::FloatingButton;
+                s_touchMode = TouchMode::Menu;
 
-                s_buttonTouchStart = point;
-                s_buttonLastTouch = point;
-                s_buttonDragged = false;
+                ImGuiIO& io = ImGui::GetIO();
+                io.AddMousePosEvent(point.x, point.y);
+                io.AddMouseButtonEvent(0, true);
 
                 return true;
             }
 
-            s_primaryTouch = touch->getID();
-            s_touchMode = TouchMode::Menu;
+            // Если меню закрыто, реагируем только на смайлик.
+            loadButtonPosition(screen);
 
-            ImGuiIO& io = ImGui::GetIO();
-            io.AddMousePosEvent(point.x, point.y);
-            io.AddMouseButtonEvent(0, true);
+            if (!pointInsideCircle(
+                point,
+                s_buttonPosition,
+                kButtonRadius + 14.f
+            )) {
+                return false;
+            }
+
+            s_primaryTouch = touch->getID();
+            s_touchMode = TouchMode::FloatingButton;
+
+            s_buttonTouchStart = point;
+            s_buttonLastTouch = point;
+            s_buttonDragged = false;
 
             return true;
         }
@@ -375,8 +402,11 @@ namespace {
                 }
 
                 if (s_buttonDragged) {
-                    s_buttonPosition.x += point.x - s_buttonLastTouch.x;
-                    s_buttonPosition.y += point.y - s_buttonLastTouch.y;
+                    s_buttonPosition.x +=
+                        point.x - s_buttonLastTouch.x;
+
+                    s_buttonPosition.y +=
+                        point.y - s_buttonLastTouch.y;
 
                     s_buttonPosition = clampPosition(
                         s_buttonPosition,
@@ -390,7 +420,10 @@ namespace {
 
             if (s_touchMode == TouchMode::Menu &&
                 ImGui::GetCurrentContext()) {
-                ImGui::GetIO().AddMousePosEvent(point.x, point.y);
+                ImGui::GetIO().AddMousePosEvent(
+                    point.x,
+                    point.y
+                );
             }
         }
 
@@ -410,12 +443,20 @@ namespace {
                 s_primaryTouch = -1;
                 s_touchMode = TouchMode::None;
                 s_buttonDragged = false;
+
                 return;
             }
 
             if (s_touchMode == TouchMode::Menu &&
                 ImGui::GetCurrentContext()) {
-                ImGui::GetIO().AddMouseButtonEvent(0, false);
+                ImGuiIO& io = ImGui::GetIO();
+
+                io.AddMousePosEvent(
+                    getTouchPosition(touch).x,
+                    getTouchPosition(touch).y
+                );
+
+                io.AddMouseButtonEvent(0, false);
             }
 
             s_primaryTouch = -1;
@@ -423,8 +464,9 @@ namespace {
         }
 
         void ccTouchCancelled(CCTouch* touch, CCEvent*) override {
-            if (touch->getID() == s_primaryTouch)
+            if (touch->getID() == s_primaryTouch) {
                 resetTouch();
+            }
         }
     };
 
@@ -435,30 +477,36 @@ namespace {
         if (scene->getChildByTag(kTouchLayerTag))
             return;
 
-        if (auto* layer = OverlayTouchLayer::create()) {
-            scene->addChild(layer, INT_MAX, kTouchLayerTag);
+        auto* layer = OverlayTouchLayer::create();
+
+        if (layer) {
+            scene->addChild(
+                layer,
+                INT_MAX,
+                kTouchLayerTag
+            );
         }
     }
-};
+}
 
-// Отслеживаем вход и выход из меню паузы.
-class $modify(PauseLayer) {
-    void onEnter() {
-        PauseLayer::onEnter();
-        OverlayInput::setPaused(true);
-    }
-
-    void onExit() {
-        OverlayInput::setPaused(false);
-        PauseLayer::onExit();
-    }
-};
-
-// Устанавливаем слой при каждой смене сцены.
-class $modify(CCScene) {
+// Установка слоя при входе в сцену.
+class $modify(OverlayScene, CCScene) {
     void onEnter() {
         CCScene::onEnter();
         attachTouchLayer(this);
+    }
+};
+
+// Дополнительная установка при входе в главное меню.
+class $modify(OverlayMenuLayer, MenuLayer) {
+    void onEnter() {
+        MenuLayer::onEnter();
+
+        auto* director = CCDirector::sharedDirector();
+
+        if (director) {
+            attachTouchLayer(director->getRunningScene());
+        }
     }
 };
 
@@ -471,12 +519,8 @@ namespace OverlayInput {
         }
     }
 
-    void setPaused(bool paused) {
-        s_isPaused = paused;
-
-        if (!paused) {
-            resetTouch();
-        }
+    void setPaused(bool) {
+        // Смайлик больше не зависит от паузы.
     }
 
     void draw() {
@@ -485,10 +529,8 @@ namespace OverlayInput {
 
         if (GUI::toggled) {
             drawCloseButton();
-            return;
-        }
-
-        if (s_isPaused) {
+        } else {
+            // Смайлик отображается и в главном меню, и в уровнях.
             drawFloatingButton();
         }
     }
