@@ -1,10 +1,9 @@
-
 {
     "geode": "5.11.2",
     "gd": {
         "android": "2.2081"
     },
-    "version": "v2.11.1",
+    "version": "v2.11.2",
     "id": "maxnu.gd_mega_overlay",
     "name": "GD Mega Overlay",
     "developers": [
