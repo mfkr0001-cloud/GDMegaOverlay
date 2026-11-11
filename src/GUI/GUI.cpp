@@ -194,6 +194,15 @@ void GUI::draw()
     uiSizeFactor = CCDirector::sharedDirector()->getOpenGLView()->getFrameSize().width / 1920.0f;
     uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
 
+#if defined(__ANDROID__)
+    // Android uses high-density frame sizes; cap the effective UI scale so
+    // tabs, labels and controls do not become oversized on phone screens.
+    if (uiSizeFactor > 0.78f)
+        uiSizeFactor = 0.78f;
+    if (uiSizeFactor < 0.50f)
+        uiSizeFactor = 0.50f;
+#endif
+
     if (!isVisible && !shortcutLoop)
         return;
 
