@@ -192,7 +192,7 @@ void GUI::init()
 #if defined(__ANDROID__)
     // Apply the compact Android layout once per layout revision.
     // Existing user layouts are preserved on later launches.
-    constexpr int kAndroidLayoutRevision = 4;
+    constexpr int kAndroidLayoutRevision = 5;
     const int appliedLayoutRevision =
         Mod::get()->getSavedValue<int>("android-layout-revision", 0);
     if (appliedLayoutRevision < kAndroidLayoutRevision) {
@@ -546,9 +546,13 @@ void GUI::setFont(const std::filesystem::path& font)
 
 void GUI::setStyle()
 {
-    float r = Settings::get<float>("menu/window/color/r", 1.f);
-    float g = Settings::get<float>("menu/window/color/g", 0.f);
-    float b = Settings::get<float>("menu/window/color/b", 0.f);
+    float r = Settings::get<float>("menu/window/color/r", 0.90f);
+    float g = Settings::get<float>("menu/window/color/g", 0.18f);
+    float b = Settings::get<float>("menu/window/color/b", 0.63f);
+
+    // Match the dark plum panels in the reference overlay while leaving
+    // the user's opacity, blur and title color controls available.
+    GUI::loadedStyle.Colors[ImGuiCol_WindowBg] = {0.075f, 0.035f, 0.080f, 1.0f};
 
     if (Settings::get<bool>("menu/window/rainbow/enabled"))
     {
