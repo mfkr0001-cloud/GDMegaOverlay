@@ -195,12 +195,10 @@ void GUI::draw()
     uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
 
 #if defined(__ANDROID__)
-    // Android uses high-density frame sizes; cap the effective UI scale so
-    // tabs, labels and controls do not become oversized on phone screens.
-    if (uiSizeFactor > 0.78f)
-        uiSizeFactor = 0.78f;
-    if (uiSizeFactor < 0.50f)
-        uiSizeFactor = 0.50f;
+    // Android overlay menus were oversized on high-density screens.
+    // Scale the whole ImGui menu (widgets, spacing and font) down independently
+    // from the floating launcher button.
+    uiSizeFactor *= 0.35f;
 #endif
 
     if (!isVisible && !shortcutLoop)
