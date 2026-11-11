@@ -1,9 +1,8 @@
+
 #include "SafeMode.h"
 
 #include <Geode/modify/EndLevelLayer.hpp>
-
 #include <Geode/Utils.hpp>
-
 #include <Geode/Geode.hpp>
 
 #include "../util.hpp"
@@ -23,15 +22,13 @@ class $modify(EndLevelLayer)
 		if (
 			!Settings::get<bool>("level/safe_mode/enabled") ||
 			!Settings::get<bool>("level/safe_mode/endscreen_enabled")
-			) return;
+		) return;
 
 		auto layer = reinterpret_cast<CCLayer*>(this->getChildren()->objectAtIndex(0));
 		CCLabelBMFont* endScreenMessageLabel = nullptr;
 		TextArea* endScreenTextArea = nullptr;
 
-
-		CCObject* object;
-		CCARRAY_FOREACH(layer->getChildren(), object)
+		for (auto object : CCArrayExt(layer->getChildren()))
 		{
 			if (auto textArea = dynamic_cast<TextArea*>(object); textArea)
 				endScreenTextArea = textArea;
@@ -44,7 +41,7 @@ class $modify(EndLevelLayer)
 				if (
 					!labelText.starts_with("Attempts: ") && !labelText.starts_with("Jumps: ") &&
 					!labelText.starts_with("Time: ") && !labelText.starts_with("Points: ")
-					)
+				)
 					endScreenMessageLabel = messageLabel;
 			}
 		}
