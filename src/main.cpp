@@ -359,14 +359,12 @@ void initGUI()
                 if (GUI::inputFloat2("Position X/Y", xy, -10000.f, 10000.f, -10000.f, 10000.f)) {
                     edited.position = ImVec2(xy[0], xy[1]);
                     edited.renderPosition = edited.position;
-                    edited.geometryDirty = true;
                 }
                 float wh[2] = { edited.size.x, edited.size.y };
                 if (GUI::inputFloat2("Size W/H", wh, 80.f, 4000.f, 60.f, 4000.f)) {
                     edited.size = ImVec2(wh[0], wh[1]);
-                    edited.geometryDirty = true;
                 }
-                GUI::inputFloat("Text Scale", &edited.fontScale, 0.5f, 2.5f);
+                GUI::inputFloat("Text Scale", &GUI::fontScale, 10.0f, 40.0f);
                 if (GUI::button("Save Layout")) GUI::save();
                 GUI::sameLine();
                 if (GUI::button("Reset Layout")) GUI::resetDefault();
