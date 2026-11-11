@@ -3,11 +3,10 @@
 #if defined(__ANDROID__)
 
 #include "GUI.h"
-#include "../Settings.hpp"
 
 #include <Geode/Geode.hpp>
-#include <Geode/modify/CCScene.hpp>
 #include <Geode/modify/MenuLayer.hpp>
+#include <Geode/modify/PauseLayer.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include <Geode/cocos/textures/CCTextureCache.h>
 
@@ -68,13 +67,14 @@ namespace {
         ImGui::PopStyleVar(2);
     }
 
-    class FloatingButton final : public CCMenu {
+    class FloatingButton final : public CCLayer {
         CCSprite* m_sprite = nullptr;
         CCPoint m_target = CCPoint(0.f, 0.f);
         CCPoint m_lastTouch = CCPoint(0.f, 0.f);
         CCPoint m_touchStart = CCPoint(0.f, 0.f);
         float m_scale = 0.62f;
         bool m_dragged = false;
+        bool m_registered = false;
 
         float radius() const {
             return m_sprite ? m_sprite->getScaledContentSize().width * 0.5f : 28.f;
@@ -97,6 +97,20 @@ namespace {
             Mod::get()->saveData();
         }
 
+        void addTouchDelegate() {
+            if (m_registered || !isVisible())
+                return;
+            CCTouchDispatcher::get()->addTargetedDelegate(this, -1000, true);
+            m_registered = true;
+        }
+
+        void removeTouchDelegate() {
+            if (!m_registered)
+                return;
+            CCTouchDispatcher::get()->removeDelegate(this);
+            m_registered = false;
+        }
+
     public:
         static FloatingButton* create() {
             auto* ret = new FloatingButton();
@@ -109,8 +123,13 @@ namespace {
         }
 
         bool init() override {
-            if (!CCMenu::init())
+            if (!CCLayer::init())
                 return false;
+
+            const CCSize size = CCDirector::sharedDirector()->getWinSize();
+            setContentSize(size);
+            setAnchorPoint(CCPoint(0.f, 0.f));
+            setPosition(CCPoint(0.f, 0.f));
 
             const auto resourcePath = (Mod::get()->getResourcesDir() / "overlay_icon.png").string();
             auto* texture = CCTextureCache::get()->addImage(resourcePath.c_str(), true);
@@ -126,41 +145,52 @@ namespace {
             m_sprite->setScale(m_scale);
             addChild(m_sprite);
 
-            const CCSize size = CCDirector::sharedDirector()->getWinSize();
             const float savedX = Mod::get()->getSavedValue<float>("overlay/button-x", 0.065f);
             const float savedY = Mod::get()->getSavedValue<float>("overlay/button-y", 0.50f);
             m_target = CCPoint(savedX * size.width, savedY * size.height);
             clampTarget();
             m_sprite->setPosition(m_target);
 
-            setPosition(CCPoint(0.f, 0.f));
             setZOrder(INT_MAX - 1);
             scheduleUpdate();
             return true;
         }
 
+        void onEnter() override {
+            CCLayer::onEnter();
+            addTouchDelegate();
+        }
+
+        void onExit() override {
+            removeTouchDelegate();
+            CCLayer::onExit();
+        }
+
         void registerWithTouchDispatcher() override {
-            CCTouchDispatcher::get()->addTargetedDelegate(this, -1000, true);
+            addTouchDelegate();
         }
 
         void setVisible(bool visible) override {
             if (isVisible() == visible)
                 return;
 
-            CCMenu::setVisible(visible);
-            auto* dispatcher = CCDirector::sharedDirector()->getTouchDispatcher();
-            if (!dispatcher)
-                return;
-
+            CCLayer::setVisible(visible);
             if (visible)
-                dispatcher->addTargetedDelegate(this, -1000, true);
+                addTouchDelegate();
             else
-                dispatcher->removeDelegate(this);
+                removeTouchDelegate();
         }
 
         void update(float dt) override {
             if (!m_sprite)
                 return;
+
+            // Hide the floating control while the ImGui overlay is open.
+            setVisible(!GUI::toggled);
+
+            const CCSize size = CCDirector::sharedDirector()->getWinSize();
+            if (getContentSize().width != size.width || getContentSize().height != size.height)
+                setContentSize(size);
 
             clampTarget();
             const CCPoint current = m_sprite->getPosition();
@@ -222,6 +252,22 @@ namespace {
     };
 
     class ImGuiTouchLayer final : public CCLayer {
+        bool m_registered = false;
+
+        void addTouchDelegate() {
+            if (m_registered)
+                return;
+            CCTouchDispatcher::get()->addTargetedDelegate(this, INT_MIN, true);
+            m_registered = true;
+        }
+
+        void removeTouchDelegate() {
+            if (!m_registered)
+                return;
+            CCTouchDispatcher::get()->removeDelegate(this);
+            m_registered = false;
+        }
+
     public:
         static ImGuiTouchLayer* create() {
             auto* ret = new ImGuiTouchLayer();
@@ -236,13 +282,21 @@ namespace {
         bool init() override {
             if (!CCLayer::init())
                 return false;
-            setTouchEnabled(true);
             return true;
         }
 
+        void onEnter() override {
+            CCLayer::onEnter();
+            addTouchDelegate();
+        }
+
+        void onExit() override {
+            removeTouchDelegate();
+            CCLayer::onExit();
+        }
+
         void registerWithTouchDispatcher() override {
-            // Highest priority, but touches pass through while the overlay is closed.
-            CCTouchDispatcher::get()->addTargetedDelegate(this, INT_MIN, true);
+            addTouchDelegate();
         }
 
         bool ccTouchBegan(CCTouch* touch, CCEvent*) override {
@@ -280,18 +334,18 @@ namespace {
         }
     };
 
-    void attachOverlayToScene(CCScene* scene) {
-        if (!scene)
+    void attachOverlayToNode(CCNode* parent) {
+        if (!parent)
             return;
 
-        if (!scene->getChildByTag(kFloatingButtonTag)) {
+        if (!parent->getChildByTag(kFloatingButtonTag)) {
             if (auto* button = FloatingButton::create())
-                scene->addChild(button, INT_MAX - 1, kFloatingButtonTag);
+                parent->addChild(button, INT_MAX - 1, kFloatingButtonTag);
         }
 
-        if (!scene->getChildByTag(kImGuiTouchLayerTag)) {
+        if (!parent->getChildByTag(kImGuiTouchLayerTag)) {
             if (auto* touchLayer = ImGuiTouchLayer::create())
-                scene->addChild(touchLayer, INT_MAX, kImGuiTouchLayerTag);
+                parent->addChild(touchLayer, INT_MAX, kImGuiTouchLayerTag);
         }
     }
 
@@ -304,31 +358,39 @@ namespace {
         if (!scene)
             return;
 
+        // The button is attached to MenuLayer or PauseLayer, not to loading/game scenes.
         auto* node = scene->getChildByTag(kFloatingButtonTag);
+        if (!node) {
+            if (auto* menu = typeinfo_cast<MenuLayer*>(scene))
+                node = menu->getChildByTag(kFloatingButtonTag);
+        }
+
         if (node)
             static_cast<FloatingButton*>(node)->setVisible(!GUI::toggled);
     }
 }
 
-class $modify(GDMegaOverlaySceneHook, CCScene) {
-    void onEnter() {
-        CCScene::onEnter();
-        attachOverlayToScene(this);
+class $modify(GDMegaOverlayMenuHook, MenuLayer) {
+    bool init() {
+        if (!MenuLayer::init())
+            return false;
+
+        attachOverlayToNode(this);
+        return true;
     }
 };
 
-class $modify(GDMegaOverlayMenuHook, MenuLayer) {
+class $modify(GDMegaOverlayPauseHook, PauseLayer) {
     void onEnter() {
-        MenuLayer::onEnter();
-        attachOverlayToScene(CCDirector::sharedDirector()->getRunningScene());
+        PauseLayer::onEnter();
+        attachOverlayToNode(this);
     }
 };
 
 namespace OverlayInput {
     void install() {
-        auto* director = CCDirector::sharedDirector();
-        if (director)
-            attachOverlayToScene(director->getRunningScene());
+        // Do not create the floating button in the loading scene.
+        // MenuLayer::init and PauseLayer::onEnter attach it to the correct screens.
     }
 
     void setPaused(bool) {}
@@ -337,7 +399,6 @@ namespace OverlayInput {
         if (!ImGui::GetCurrentContext())
             return;
 
-        syncFloatingButtonVisibility();
         if (GUI::toggled)
             drawCloseButton();
     }
