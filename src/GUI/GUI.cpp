@@ -145,7 +145,7 @@ void GUI::init()
 #if defined(__ANDROID__)
     // Apply the Android scale before fonts and default window sizes are created.
     // This keeps text, widgets, tabs and window geometry in the same scale.
-    uiSizeFactor *= 0.50f;
+    uiSizeFactor *= 0.42f;
 #endif
     Blur::compiled = false;
 
@@ -188,6 +188,23 @@ void GUI::init()
     );
 
     load();
+
+#if defined(__ANDROID__)
+    // Apply the compact Android layout once per layout revision.
+    // Existing user layouts are preserved on later launches.
+    constexpr int kAndroidLayoutRevision = 4;
+    const int appliedLayoutRevision =
+        Mod::get()->getSavedValue<int>("android-layout-revision", 0);
+    if (appliedLayoutRevision < kAndroidLayoutRevision) {
+        GUI::resetDefault();
+        GUI::save();
+        Mod::get()->setSavedValue<int>(
+            "android-layout-revision",
+            kAndroidLayoutRevision
+        );
+        Mod::get()->saveData();
+    }
+#endif
 }
 
 void GUI::setLateInit(const std::function<void()>& func)
@@ -203,7 +220,7 @@ void GUI::draw()
 #if defined(__ANDROID__)
     // Keep draw-time widget constraints in sync with the font and window scale
     // selected in GUI::init().
-    uiSizeFactor *= 0.50f;
+    uiSizeFactor *= 0.42f;
 #endif
 
     if (!isVisible && !shortcutLoop)
