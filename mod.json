@@ -22,7 +22,8 @@
             "res/Roboto-Regular.ttf",
             "res/get_ffmpeg/*",
             "res/default_windows.json",
-            "res/shadow.png"
+            "res/shadow.png",
+            "res/overlay_icon.png"
         ]
     },
     "dependencies": {
