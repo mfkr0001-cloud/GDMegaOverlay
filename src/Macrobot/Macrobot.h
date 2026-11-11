@@ -127,6 +127,8 @@ namespace Macrobot
 
 	inline unsigned int actionIndex = 0;
 	inline unsigned int targetSteps = 0;
+	// Android-compatible frame counter; GJGameState no longer exposes m_unk1f8.
+	inline uint32_t currentFrame = 0;
 
 	inline float advanceHoldTime = 0;
 
