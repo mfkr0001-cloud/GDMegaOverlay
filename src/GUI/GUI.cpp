@@ -1,3 +1,4 @@
+```cpp
 #include <filesystem>
 #include "GUI.h"
 #include <Geode/Geode.hpp>
@@ -204,12 +205,11 @@ void GUI::toggle()
 
 	isVisible = true;
 	toggled = !toggled;
-																											//isPaused
+																											
 #if !defined(__ANDROID__)
 	cocos2d::CCEGLView::sharedOpenGLView()->showCursor(toggled || !PlayLayer::get() || (PlayLayer::get() && MBO(bool, PlayLayer::get(), 0x2F17)) || (PlayLayer::get() && PlayLayer::get()->getChildByID("EndLevelLayer")));
 #endif
 
-	// 🔥🔥🔥🔥
 	hideTimer = toggled ? -FLT_MAX : 0;
 
 	if (!toggled)
@@ -268,15 +268,11 @@ void GUI::addWindow(Window window)
 {
 	if (windowPositions.contains(window.name))
 	{
-		// Saved window geometry is stored relative to the current viewport.
 		window.position = getJsonPosition(window.name);
 		window.size = getJsonSize(window.name, window.size);
 	}
 	else
 	{
-		// The original defaults were authored for a 1920px-wide desktop.
-		// Scale only first-run defaults so the original windows remain reachable
-		// on narrower Android screens. Saved positions are already viewport-relative.
 		window.position = {
 			window.position.x * uiSizeFactor,
 			window.position.y * uiSizeFactor
@@ -349,7 +345,6 @@ void GUI::load()
 	if (!f)
 	{
 		f.close();
-
 		f.open(Mod::get()->getResourcesDir() / "default_windows.json");
 	}
 
@@ -458,9 +453,15 @@ void GUI::loadStyle(const std::filesystem::path& name)
 
 void GUI::setFont(const std::filesystem::path& font)
 {
-	ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(font.string().c_str(), fontScale * uiSizeFactor);
-	ImGui::GetIO().FontDefault = fnt;
-	ImGuiCocos::get().reloadFontTexture();
+	ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(
+		font.string().c_str(),
+		fontScale * uiSizeFactor
+	);
+
+	if (fnt)
+		ImGui::GetIO().FontDefault = fnt;
+	else
+		log::error("Failed to load font: {}", font.string());
 }
 
 void GUI::setStyle()
@@ -501,3 +502,4 @@ bool GUI::shouldRender()
 {
 	return isVisible && !shortcutLoop;
 }
+```
