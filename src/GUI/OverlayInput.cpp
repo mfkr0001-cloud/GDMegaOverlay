@@ -8,10 +8,11 @@
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CCScene.hpp>
+#include <Geode/modify/PauseLayer.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
-#include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
 #include <Geode/cocos/textures/CCTextureCache.h>
 #include <Geode/cocos/textures/CCTexture2D.h>
+
 #include <imgui-cocos.hpp>
 #include <imgui_internal.h>
 
@@ -26,6 +27,8 @@ namespace {
     constexpr int kTouchLayerTag = 0x47444D;
     constexpr float kButtonRadius = 28.f;
     constexpr float kDragThreshold = 8.f;
+
+    bool s_isPaused = false;
 
     enum class TouchMode {
         None,
@@ -100,7 +103,6 @@ namespace {
 
         s_buttonPosition = ImVec2(x * screen.x, y * screen.y);
         s_buttonPosition = clampPosition(s_buttonPosition, screen);
-
         s_buttonPositionLoaded = true;
     }
 
@@ -152,6 +154,7 @@ namespace {
             2.89f,
             24
         );
+
         draw->PathStroke(
             white,
             ImDrawFlags_None,
@@ -318,6 +321,11 @@ namespace {
             if (s_primaryTouch != -1)
                 return false;
 
+            // Не перехватываем касания, если меню закрыто
+            // и игра не находится на паузе.
+            if (!GUI::toggled && !s_isPaused)
+                return false;
+
             ImVec2 point = getTouchPosition(touch);
             ImVec2 screen = ImGui::GetIO().DisplaySize;
 
@@ -398,8 +406,6 @@ namespace {
                 if (s_buttonDragged) {
                     saveButtonPosition(screen);
                 } else {
-                    // A normal tap always opens the menu.
-                    // Do not block it with GUI::canToggle.
                     GUI::toggle();
                 }
 
@@ -437,6 +443,20 @@ namespace {
     }
 }
 
+// Отслеживаем появление и закрытие окна паузы.
+class $modify(PauseLayer) {
+    void customSetup() {
+        PauseLayer::customSetup();
+        OverlayInput::setPaused(true);
+    }
+
+    void onExit() {
+        OverlayInput::setPaused(false);
+        PauseLayer::onExit();
+    }
+};
+
+// Повторно устанавливаем слой при смене сцены.
 class $modify(CCScene) {
     void onEnter() {
         CCScene::onEnter();
@@ -453,14 +473,26 @@ namespace OverlayInput {
         }
     }
 
+    void setPaused(bool paused) {
+        s_isPaused = paused;
+
+        if (!paused) {
+            resetTouch();
+        }
+    }
+
     void draw() {
         if (!ImGui::GetCurrentContext())
             return;
 
-        if (GUI::toggled)
+        if (GUI::toggled) {
             drawCloseButton();
-        else
+            return;
+        }
+
+        if (s_isPaused) {
             drawFloatingButton();
+        }
     }
 }
 
@@ -469,6 +501,7 @@ namespace OverlayInput {
 namespace OverlayInput {
     void install() {}
     void draw() {}
+    void setPaused(bool) {}
 }
 
 #endif
