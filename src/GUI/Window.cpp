@@ -43,9 +43,6 @@ bool Window::visibleInScreen() {
 void Window::draw() {
     if (GUI::isVisible && visibleInScreen()) {
         if (maxSize.x != 0 && maxSize.y != 0) {
-            // Keep window width in actual ImGui screen pixels. Scaling the
-            // 200px min/max width by uiSizeFactor made Android windows only
-            // a few dozen pixels wide.
             const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
             ImGui::SetNextWindowSizeConstraints(
                 {minSize.x, minSize.y * GUI::uiSizeFactor},
@@ -63,7 +60,7 @@ void Window::draw() {
         else
             ImGui::SetNextWindowBgAlpha(windowTransparency);
 
-        ImGui::Begin(name.c_str(), nullptr, flags);
+        ImGui::Begin(name.c_str(), nullptr, flags | ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
         if (Settings::get<bool>("menu/title_gradient/enabled", true))
             customTitlebar();
