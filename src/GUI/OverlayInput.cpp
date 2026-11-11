@@ -1,3 +1,4 @@
+
 #include "OverlayInput.h"
 
 #if defined(__ANDROID__)
@@ -21,7 +22,7 @@
 using namespace geode::prelude;
 
 namespace {
-    constexpr int kTouchLayerTag = 0x47444D; // "GDM"
+    constexpr int kTouchLayerTag = 0x47444D;
     constexpr float kButtonRadius = 28.f;
     constexpr float kButtonDragThreshold = 8.f;
     constexpr float kScrollThreshold = 10.f;
@@ -71,7 +72,6 @@ namespace {
         if (winSize.width <= 0.f || winSize.height <= 0.f)
             return ImVec2(0.f, 0.f);
 
-        // Cocos uses a bottom-left origin; ImGui uses a top-left origin.
         return ImVec2(
             location.x * display.x / winSize.width,
             (winSize.height - location.y) * display.y / winSize.height
@@ -120,19 +120,22 @@ namespace {
     void drawFloatingButton() {
         ImGuiIO& io = ImGui::GetIO();
         const ImVec2 screen = io.DisplaySize;
+
         if (screen.x <= 0.f || screen.y <= 0.f)
             return;
+
         loadButtonPosition(screen);
-        // Keep the control reachable after rotation or a resolution change.
         s_buttonPosition = clampToScreen(s_buttonPosition, screen, kButtonRadius + 2.f);
 
         ImDrawList* draw = ImGui::GetForegroundDrawList();
-        // A subtle shadow keeps the icon visible over bright gameplay scenes.
-        draw->AddCircleFilled(ImVec2(s_buttonPosition.x + 1.f, s_buttonPosition.y + 3.f),
-            kButtonRadius + 1.f, IM_COL32(0, 0, 0, 90), 48);
 
-        // The user-provided image must be placed at res/overlay_icon.png.
-        // Keep the procedural face as a safe fallback if the image is absent.
+        draw->AddCircleFilled(
+            ImVec2(s_buttonPosition.x + 1.f, s_buttonPosition.y + 3.f),
+            kButtonRadius + 1.f,
+            IM_COL32(0, 0, 0, 90),
+            48
+        );
+
         if (!s_buttonTextureAttempted) {
             s_buttonTextureAttempted = true;
             const auto iconPath = (Mod::get()->getResourcesDir() / "overlay_icon.png").string();
@@ -140,10 +143,21 @@ namespace {
         }
 
         if (s_buttonTexture) {
-            const ImVec2 size(kButtonRadius * 2.f, kButtonRadius * 2.f);
-            const ImVec2 min(s_buttonPosition.x - kButtonRadius, s_buttonPosition.y - kButtonRadius);
-            const ImVec2 max(s_buttonPosition.x + kButtonRadius, s_buttonPosition.y + kButtonRadius);
-            draw->AddImage((ImTextureID)(intptr_t)s_buttonTexture->getName(), min, max);
+            const ImVec2 min(
+                s_buttonPosition.x - kButtonRadius,
+                s_buttonPosition.y - kButtonRadius
+            );
+
+            const ImVec2 max(
+                s_buttonPosition.x + kButtonRadius,
+                s_buttonPosition.y + kButtonRadius
+            );
+
+            draw->AddImage(
+                (ImTextureID)(intptr_t)s_buttonTexture->getName(),
+                min,
+                max
+            );
         } else {
             drawEasyFace(draw, s_buttonPosition, kButtonRadius);
         }
@@ -153,37 +167,57 @@ namespace {
         ImGuiIO& io = ImGui::GetIO();
         const ImVec2 screen = io.DisplaySize;
 
-        ImGui::SetNextWindowPos(ImVec2(std::max(8.f, screen.x - 60.f), 10.f), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(
+            ImVec2(std::max(8.f, screen.x - 60.f), 10.f),
+            ImGuiCond_Always
+        );
+
         ImGui::SetNextWindowSize(ImVec2(50.f, 50.f), ImGuiCond_Always);
+
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
         ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(24, 28, 36, 225));
 
-        if (ImGui::Begin("##GDMegaOverlayAndroidClose", nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing)) {
+        if (ImGui::Begin(
+            "##GDMegaOverlayAndroidClose",
+            nullptr,
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoFocusOnAppearing
+        )) {
             if (ImGui::Button("×", ImVec2(50.f, 50.f)))
                 GUI::toggle();
         }
+
         ImGui::End();
 
         ImGui::PopStyleColor();
         ImGui::PopStyleVar(2);
 
         ImVec2 pointer = io.MousePos;
-        if (pointer.x < 0.f || pointer.y < 0.f || pointer.x > screen.x || pointer.y > screen.y)
-            pointer = ImVec2(screen.x * 0.5f, screen.y * 0.5f);
 
-        // Software cursor: independent of Android's system mouse cursor.
+        if (pointer.x < 0.f || pointer.y < 0.f ||
+            pointer.x > screen.x || pointer.y > screen.y) {
+            pointer = ImVec2(screen.x * 0.5f, screen.y * 0.5f);
+        }
+
         ImDrawList* draw = ImGui::GetForegroundDrawList();
-        draw->AddTriangleFilled(pointer,
+
+        draw->AddTriangleFilled(
+            pointer,
             ImVec2(pointer.x + 2.f, pointer.y + 22.f),
             ImVec2(pointer.x + 8.f, pointer.y + 15.f),
-            IM_COL32(255, 255, 255, 255));
-        draw->AddTriangle(pointer,
+            IM_COL32(255, 255, 255, 255)
+        );
+
+        draw->AddTriangle(
+            pointer,
             ImVec2(pointer.x + 2.f, pointer.y + 22.f),
             ImVec2(pointer.x + 8.f, pointer.y + 15.f),
-            IM_COL32(20, 20, 20, 255), 1.2f);
+            IM_COL32(20, 20, 20, 255),
+            1.2f
+        );
     }
 
     void resetMenuTouchState() {
@@ -192,6 +226,7 @@ namespace {
             io.AddMouseButtonEvent(0, false);
             io.AddMouseButtonEvent(1, false);
         }
+
         s_primaryTouch = -1;
         s_secondaryTouch = -1;
         s_touchMode = TouchMode::None;
@@ -206,10 +241,12 @@ namespace {
     public:
         static OverlayTouchLayer* create() {
             auto* layer = new OverlayTouchLayer();
+
             if (layer && layer->init()) {
                 layer->autorelease();
                 return layer;
             }
+
             CC_SAFE_DELETE(layer);
             return nullptr;
         }
@@ -217,27 +254,29 @@ namespace {
         bool init() override {
             if (!CCLayer::init())
                 return false;
+
             setTouchEnabled(true);
             return true;
         }
 
         void onExit() override {
-            // A scene transition can cancel an in-progress touch. Never leave
-            // a stale touch ID or a pressed ImGui button for the next scene.
             resetMenuTouchState();
             s_buttonDragged = false;
             CCLayer::onExit();
         }
 
         void registerWithTouchDispatcher() override {
-            // Highest practical priority. We only claim the Easy button while
-            // the menu is hidden; while open, all touches belong to ImGui.
+            log::info("[OverlayInput] Registering touch delegate");
             CCTouchDispatcher::get()->addTargetedDelegate(this, INT_MIN + 1, true);
         }
 
         bool ccTouchBegan(CCTouch* touch, CCEvent*) override {
-            if (!ImGuiCocos::get().isInitialized() || !ImGui::GetCurrentContext())
+            log::info("[OverlayInput] Touch began");
+
+            if (!ImGuiCocos::get().isInitialized() || !ImGui::GetCurrentContext()) {
+                log::info("[OverlayInput] ImGui is not initialized");
                 return false;
+            }
 
             const int touchId = touch->getID();
             const ImVec2 point = toImGuiPosition(touch);
@@ -248,42 +287,48 @@ namespace {
                     return false;
 
                 loadButtonPosition(screen);
+
                 if (!pointInsideCircle(point, s_buttonPosition, kButtonRadius + 12.f))
                     return false;
+
+                log::info("[OverlayInput] Floating button touched");
 
                 s_primaryTouch = touchId;
                 s_touchMode = TouchMode::FloatingButton;
                 s_buttonTouchStart = point;
                 s_buttonLastTouch = point;
                 s_buttonDragged = false;
+
                 return true;
             }
 
-            // With the menu open, claim every touch so gameplay never receives
-            // menu gestures. The first finger moves/clicks the virtual pointer.
             if (s_touchMode == TouchMode::None || s_touchMode == TouchMode::Menu) {
                 if (s_primaryTouch == -1) {
                     s_primaryTouch = touchId;
                     s_touchMode = TouchMode::Menu;
                     s_primaryPosition = point;
+
                     ImGuiIO& io = ImGui::GetIO();
                     io.AddMousePosEvent(point.x, point.y);
                     io.AddMouseButtonEvent(0, true);
+
                     return true;
                 }
 
                 if (s_secondaryTouch == -1 && touchId != s_primaryTouch) {
                     s_secondaryTouch = touchId;
                     s_secondaryPosition = point;
+
                     s_lastScrollCenter = ImVec2(
                         (s_primaryPosition.x + s_secondaryPosition.x) * 0.5f,
                         (s_primaryPosition.y + s_secondaryPosition.y) * 0.5f
                     );
+
                     s_twoFingerScrolling = false;
-                    // A two-finger tap is a right-click candidate. Do not
-                    // press it yet: if the fingers move, this becomes scroll.
                     s_secondaryIsRightClick = true;
+
                     ImGui::GetIO().AddMouseButtonEvent(0, false);
+
                     return true;
                 }
             }
@@ -292,18 +337,31 @@ namespace {
         }
 
         void ccTouchMoved(CCTouch* touch, CCEvent*) override {
-            if (s_touchMode == TouchMode::FloatingButton && touch->getID() == s_primaryTouch) {
+            if (s_touchMode == TouchMode::FloatingButton &&
+                touch->getID() == s_primaryTouch) {
+
                 const ImVec2 point = toImGuiPosition(touch);
+
                 const float dx = point.x - s_buttonTouchStart.x;
                 const float dy = point.y - s_buttonTouchStart.y;
-                if (!s_buttonDragged && (dx * dx + dy * dy) >= kButtonDragThreshold * kButtonDragThreshold)
+
+                if (!s_buttonDragged &&
+                    (dx * dx + dy * dy) >=
+                    kButtonDragThreshold * kButtonDragThreshold) {
                     s_buttonDragged = true;
+                }
 
                 if (s_buttonDragged) {
                     s_buttonPosition.x += point.x - s_buttonLastTouch.x;
                     s_buttonPosition.y += point.y - s_buttonLastTouch.y;
-                    s_buttonPosition = clampToScreen(s_buttonPosition, ImGui::GetIO().DisplaySize, kButtonRadius + 2.f);
+
+                    s_buttonPosition = clampToScreen(
+                        s_buttonPosition,
+                        ImGui::GetIO().DisplaySize,
+                        kButtonRadius + 2.f
+                    );
                 }
+
                 s_buttonLastTouch = point;
                 return;
             }
@@ -329,14 +387,14 @@ namespace {
                     (s_primaryPosition.x + s_secondaryPosition.x) * 0.5f,
                     (s_primaryPosition.y + s_secondaryPosition.y) * 0.5f
                 );
+
                 const float deltaY = s_lastScrollCenter.y - center.y;
 
                 if (!s_twoFingerScrolling) {
                     const float totalY = center.y - s_lastScrollCenter.y;
+
                     if (std::abs(totalY) >= kScrollThreshold) {
                         s_twoFingerScrolling = true;
-                        // Movement past the threshold converts the gesture
-                        // into scrolling, not a right-click.
                         s_secondaryIsRightClick = false;
                     }
                 }
@@ -351,15 +409,20 @@ namespace {
         void ccTouchEnded(CCTouch* touch, CCEvent*) override {
             const int touchId = touch->getID();
 
-            if (s_touchMode == TouchMode::FloatingButton && touchId == s_primaryTouch) {
+            if (s_touchMode == TouchMode::FloatingButton &&
+                touchId == s_primaryTouch) {
+
                 const ImVec2 screen = ImGui::GetIO().DisplaySize;
+
                 s_primaryTouch = -1;
                 s_touchMode = TouchMode::None;
 
-                if (s_buttonDragged)
+                if (s_buttonDragged) {
                     saveButtonPosition(screen);
-                else if (GUI::canToggle)
+                } else if (GUI::canToggle) {
+                    log::info("[OverlayInput] Toggling menu");
                     GUI::toggle();
+                }
 
                 s_buttonDragged = false;
                 return;
@@ -369,28 +432,37 @@ namespace {
                 return;
 
             ImGuiIO& io = ImGui::GetIO();
+
             if (touchId == s_secondaryTouch) {
                 if (s_secondaryIsRightClick) {
-                    // Deliver a complete right-click only for a two-finger tap.
                     io.AddMouseButtonEvent(1, true);
                     io.AddMouseButtonEvent(1, false);
                 }
+
                 s_secondaryTouch = -1;
                 s_secondaryIsRightClick = false;
                 s_twoFingerScrolling = false;
+
                 if (s_primaryTouch != -1)
                     io.AddMouseButtonEvent(0, true);
+
             } else if (touchId == s_primaryTouch) {
                 io.AddMouseButtonEvent(0, false);
                 s_primaryTouch = -1;
+
                 if (s_secondaryTouch != -1) {
                     s_primaryTouch = s_secondaryTouch;
                     s_primaryPosition = s_secondaryPosition;
                     s_secondaryTouch = -1;
-                    // The remaining finger becomes the primary pointer.
+
                     s_secondaryIsRightClick = false;
                     s_twoFingerScrolling = false;
-                    io.AddMousePosEvent(s_primaryPosition.x, s_primaryPosition.y);
+
+                    io.AddMousePosEvent(
+                        s_primaryPosition.x,
+                        s_primaryPosition.y
+                    );
+
                     io.AddMouseButtonEvent(0, true);
                 }
             }
@@ -409,6 +481,7 @@ namespace {
                     s_touchMode = TouchMode::None;
                     s_buttonDragged = false;
                 }
+
                 return;
             }
 
@@ -418,11 +491,22 @@ namespace {
     };
 
     void attachTouchLayer(CCScene* scene) {
-        if (!scene || scene->getChildByTag(kTouchLayerTag))
+        if (!scene) {
+            log::info("[OverlayInput] Scene is null");
             return;
+        }
 
-        if (auto* layer = OverlayTouchLayer::create())
+        if (scene->getChildByTag(kTouchLayerTag)) {
+            log::info("[OverlayInput] Touch layer already exists");
+            return;
+        }
+
+        if (auto* layer = OverlayTouchLayer::create()) {
             scene->addChild(layer, INT_MAX, kTouchLayerTag);
+            log::info("[OverlayInput] Touch layer attached");
+        } else {
+            log::info("[OverlayInput] Failed to create touch layer");
+        }
     }
 }
 
@@ -435,6 +519,8 @@ class $modify(CCScene) {
 
 namespace OverlayInput {
     void install() {
+        log::info("[OverlayInput] Install called");
+
         if (auto* director = CCDirector::sharedDirector())
             attachTouchLayer(director->getRunningScene());
     }
