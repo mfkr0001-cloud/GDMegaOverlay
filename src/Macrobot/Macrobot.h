@@ -148,6 +148,8 @@ namespace Macrobot
 	inline std::unordered_map<int, float> timeForKey2;
 	inline std::unordered_map<int, bool> playbackHeld1;
 	inline std::unordered_map<int, bool> playbackHeld2;
+	inline std::unordered_map<int, bool> recordingHeld1;
+	inline std::unordered_map<int, bool> recordingHeld2;
 
 	inline FMOD::Channel* clickChannel = nullptr;
 
