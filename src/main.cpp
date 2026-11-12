@@ -61,7 +61,7 @@ void init()
 }
 
 namespace {
-    constexpr int kDefaultLayoutRevision = 3;
+    constexpr int kDefaultLayoutRevision = 4;
     bool pendingDefaultLayoutSave = false;
 }
 
