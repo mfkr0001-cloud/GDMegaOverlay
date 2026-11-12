@@ -349,6 +349,15 @@ namespace {
         }
     }
 
+    void ensureOverlayOnRunningScene() {
+        auto* director = CCDirector::sharedDirector();
+        if (!director)
+            return;
+        auto* scene = director->getRunningScene();
+        if (scene)
+            attachOverlayToNode(scene);
+    }
+
 }
 
 // Attach to the running scene rather than individual menu/pause layers.
@@ -369,6 +378,8 @@ namespace OverlayInput {
     void setPaused(bool) {}
 
     void draw() {
+        // Fallback for every active GD screen, including custom level-browser and gameplay scenes.
+        ensureOverlayOnRunningScene();
         if (!ImGui::GetCurrentContext())
             return;
 
