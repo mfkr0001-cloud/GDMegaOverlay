@@ -6,6 +6,7 @@
 
 #include <imgui_internal.h>
 #include <algorithm>
+#include <cmath>
 
 #include <Geode/Geode.hpp>
 
@@ -22,6 +23,106 @@ float roundSnap(float n, int snap) {
 
     return static_cast<float>((n - a > b - n) ? b : a);
 }
+
+
+#if defined(__ANDROID__)
+// Android-only helpers. They are also used by GUI.cpp (declared there).
+
+// Real size of the screen in ImGui coordinates. Falls back to the cocos
+// frame size while ImGui has not received a display size yet.
+ImVec2 androidScreenSize() {
+    ImVec2 screen = ImGui::GetIO().DisplaySize;
+    if (screen.x > 1.f && screen.y > 1.f)
+        return screen;
+
+    auto* director = CCDirector::sharedDirector();
+    if (director && director->getOpenGLView()) {
+        auto frame = director->getOpenGLView()->getFrameSize();
+        if (frame.width > 1.f && frame.height > 1.f)
+            return ImVec2(frame.width, frame.height);
+    }
+    return ImVec2(0.f, 0.f);
+}
+
+static bool finiteVec(const ImVec2& v) {
+    return std::isfinite(v.x) && std::isfinite(v.y);
+}
+
+struct AndroidLimits {
+    float margin;
+    float minW, maxW;
+    float minH, maxH;
+};
+
+static AndroidLimits androidLimits(const Window& w, const ImVec2& screen) {
+    AndroidLimits l;
+    l.margin = std::max(2.f, screen.x * 0.005f);
+
+    const float availW = std::max(40.f, screen.x - l.margin * 2.f);
+    const float availH = std::max(40.f, screen.y - l.margin * 2.f);
+
+    // A window is never narrower than ~18% of the screen (the old limit was
+    // ~10%, which produced unreadable columns) and never wider than 60%.
+    l.minW = std::min(availW, screen.x * 0.18f);
+    l.maxW = std::min(availW, std::max(l.minW, screen.x * 0.60f));
+
+    l.minH = std::min(availH, std::max(screen.y * 0.12f, w.minSize.y * GUI::uiSizeFactor));
+    l.maxH = availH;
+    if (l.minH > l.maxH)
+        l.minH = l.maxH;
+
+    return l;
+}
+
+// Limits size and position of a window to the real screen.
+// Returns true when something had to be corrected.
+bool fitWindowToScreen(Window& w) {
+    const ImVec2 screen = androidScreenSize();
+    if (screen.x < 100.f || screen.y < 100.f)
+        return false;
+
+    const AndroidLimits l = androidLimits(w, screen);
+
+    const ImVec2 oldPos = w.position;
+    const ImVec2 oldSize = w.size;
+    const bool renderWasSettled =
+        std::fabs(w.renderPosition.x - oldPos.x) < 0.5f &&
+        std::fabs(w.renderPosition.y - oldPos.y) < 0.5f;
+
+    // 1) size
+    ImVec2 size = w.size;
+    if (!finiteVec(size) || size.x <= 0.f || size.y <= 0.f)
+        size = ImVec2(screen.x * 0.235f, screen.y * 0.31f);
+
+    size.x = std::clamp(size.x, l.minW, l.maxW);
+    size.y = std::clamp(size.y, l.minH, l.maxH);
+
+    // 2) position (after the size is known)
+    ImVec2 pos = w.position;
+    if (!finiteVec(pos))
+        pos = ImVec2(l.margin, l.margin);
+
+    const float maxX = std::max(l.margin, screen.x - size.x - l.margin);
+    const float maxY = std::max(l.margin, screen.y - size.y - l.margin);
+    pos.x = std::clamp(pos.x, l.margin, maxX);
+    pos.y = std::clamp(pos.y, l.margin, maxY);
+
+    const bool changed =
+        pos.x != oldPos.x || pos.y != oldPos.y ||
+        size.x != oldSize.x || size.y != oldSize.y;
+
+    w.size = size;
+    w.position = pos;
+
+    // Do not touch renderPosition while the open/close animation is running
+    // (it is intentionally off-screen then); only follow the target when the
+    // window was resting at its old position.
+    if (renderWasSettled || !finiteVec(w.renderPosition))
+        w.renderPosition = pos;
+
+    return changed;
+}
+#endif
 
 Window::Window(const std::string& name, const std::function<void()>& windowFunction) {
     this->name = name;
@@ -44,23 +145,24 @@ bool Window::visibleInScreen() {
 
 void Window::draw() {
 #if defined(__ANDROID__)
-    // Older saved layouts may contain desktop pixel coordinates. Keep the two
-    // tabs reachable on Android without touching any other window geometry.
-    if (name == "Bypass" || name == "Creator") {
-        const ImVec2 screen = ImGui::GetIO().DisplaySize;
-        if (screen.x > 0.f && screen.y > 0.f) {
-            const float maxX = std::max(0.f, screen.x - std::max(120.f, size.x));
-            const float maxY = std::max(0.f, screen.y - std::max(100.f, size.y));
-            if (renderPosition.x < 0.f || renderPosition.x > screen.x ||
-                renderPosition.y < 0.f || renderPosition.y > screen.y) {
-                renderPosition.x = std::clamp(renderPosition.x, 0.f, maxX);
-                renderPosition.y = std::clamp(renderPosition.y, 0.f, maxY);
-                position = renderPosition;
-            }
-        }
-    }
+    // Fix size and coordinates of EVERY window before the visibility check,
+    // so old layouts (desktop pixels, narrow columns, off-screen windows) are
+    // always brought back to the real screen.
+    fitWindowToScreen(*this);
 #endif
     if (GUI::isVisible && visibleInScreen()) {
+#if defined(__ANDROID__)
+        {
+            const ImVec2 screen = androidScreenSize();
+            if (screen.x > 100.f && screen.y > 100.f) {
+                const AndroidLimits l = androidLimits(*this, screen);
+                ImGui::SetNextWindowSizeConstraints(
+                    {l.minW, l.minH},
+                    {l.maxW, l.maxH}
+                );
+            }
+        }
+#else
         if (maxSize.x != 0 && maxSize.y != 0) {
             const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
             const float minWidth = displaySize.x * 0.098f;
@@ -70,6 +172,7 @@ void Window::draw() {
                 {maxWidth, maxSize.y * GUI::uiSizeFactor}
             );
         }
+#endif
 
         bool blurEnabled = Settings::get<bool>("menu/blur/enabled", false);
         bool blurGD = Settings::get<bool>("menu/blur/gd", false);
@@ -122,6 +225,10 @@ void Window::draw() {
                     roundSnap(size.y, sizeSnap)
                 };
 
+#if defined(__ANDROID__)
+            // Keep dragged / resized windows inside the screen (after snapping).
+            fitWindowToScreen(*this);
+#endif
             renderPosition = position;
 
             GUI::setJsonPosition(name, position);
