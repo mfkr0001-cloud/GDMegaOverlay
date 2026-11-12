@@ -5,8 +5,7 @@
 #include "GUI.h"
 
 #include <Geode/Geode.hpp>
-#include <Geode/modify/MenuLayer.hpp>
-#include <Geode/modify/PauseLayer.hpp>
+#include <Geode/modify/CCScene.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include <Geode/cocos/textures/CCTextureCache.h>
 
@@ -350,48 +349,21 @@ namespace {
         }
     }
 
-    void syncFloatingButtonVisibility() {
-        auto* director = CCDirector::sharedDirector();
-        if (!director)
-            return;
-
-        auto* scene = director->getRunningScene();
-        if (!scene)
-            return;
-
-        // The button is attached to MenuLayer or PauseLayer, not to loading/game scenes.
-        auto* node = scene->getChildByTag(kFloatingButtonTag);
-        if (!node) {
-            if (auto* menu = typeinfo_cast<MenuLayer*>(scene))
-                node = menu->getChildByTag(kFloatingButtonTag);
-        }
-
-        if (node)
-            static_cast<FloatingButton*>(node)->setVisible(!GUI::toggled);
-    }
 }
 
-class $modify(GDMegaOverlayMenuHook, MenuLayer) {
-    bool init() {
-        if (!MenuLayer::init())
-            return false;
-
-        attachOverlayToNode(this);
-        return true;
-    }
-};
-
-class $modify(GDMegaOverlayPauseHook, PauseLayer) {
+// Attach to the running scene rather than individual menu/pause layers.
+// This keeps the floating toggle available when GD switches between the main
+// menu, level browser/search, level lists and gameplay scenes.
+class $modify(GDMegaOverlaySceneHook, CCScene) {
     void onEnter() {
-        PauseLayer::onEnter();
+        CCScene::onEnter();
         attachOverlayToNode(this);
     }
 };
 
 namespace OverlayInput {
     void install() {
-        // Do not create the floating button in the loading scene.
-        // MenuLayer::init and PauseLayer::onEnter attach it to the correct screens.
+        // The global CCScene hook attaches the control to each running scene.
     }
 
     void setPaused(bool) {}
