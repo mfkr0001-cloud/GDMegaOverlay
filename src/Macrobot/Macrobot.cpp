@@ -232,6 +232,23 @@ class $modify(GJBaseGameLayer)
 #if defined(__ANDROID__)
 		GJBaseGameLayer::update(dt);
 		++currentFrame;
+		if (playerMode == PLAYBACK && PlayLayer::get()) {
+			while (actionIndex < macro.inputs.size() &&
+				   currentFrame >= macro.inputs[actionIndex].frame) {
+				handleAction(macro.inputs[actionIndex]);
+				++actionIndex;
+			}
+			if (actionIndex >= macro.inputs.size()) {
+				for (const auto& [button, down] : playbackHeld1)
+					if (down) PlayLayer::get()->handleButton(false, button, true);
+				for (const auto& [button, down] : playbackHeld2)
+					if (down) PlayLayer::get()->handleButton(false, button, false);
+				playbackHeld1.clear();
+				playbackHeld2.clear();
+				playerMode = DISABLED;
+				actionIndex = 0;
+			}
+		}
 		return;
 #else
 		if (!Settings::get<bool>("macrobot/frame_step/enabled", false) || !PlayLayer::get())
@@ -299,6 +316,9 @@ void Macrobot::handleAction(Action& action)
 	botInput = true;
 	pl->handleButton(down, button, player1);
 	botInput = false;
+#if defined(__ANDROID__)
+	(player1 ? playbackHeld1 : playbackHeld2)[button] = down;
+#endif
 
 	if ((CorrectionType)Settings::get<int>("macrobot/corrections") == ACTION && action.correction.has_value())
 		action.correction->checkpoint.apply(action.correction->player2 ? pl->m_player2 : pl->m_player1, false);
@@ -675,13 +695,91 @@ bool Macrobot::clickBetweenFramesCheck()
 	return res;
 }
 
+#if defined(__ANDROID__)
+static void stopAndroidPlayback()
+{
+	if (auto* pl = PlayLayer::get()) {
+		for (const auto& [button, down] : playbackHeld1)
+			if (down) pl->handleButton(false, button, true);
+		for (const auto& [button, down] : playbackHeld2)
+			if (down) pl->handleButton(false, button, false);
+	}
+	playbackHeld1.clear();
+	playbackHeld2.clear();
+	playerMode = DISABLED;
+	actionIndex = 0;
+}
+#endif
+
 void Macrobot::drawWindow()
 {
 #if defined(__ANDROID__)
-	playerMode = DISABLED;
-	ImGui::TextDisabled("Macrobot is unavailable on Android: its checkpoint and input hooks use desktop-only offsets.");
-	return;
+	ImGui::TextWrapped("Android basic macro mode records player button presses/releases and replays them by game frame. Checkpoint corrections and frame-step are unavailable in this Android port.");
+	if (!PlayLayer::get()) {
+		ImGui::TextDisabled("Enter a level to record or play a macro.");
+	} else {
+		if (playerMode == RECORDING) {
+			if (GUI::button("Stop Recording")) {
+				playerMode = DISABLED;
+				macro.duration = macro.framerate > 0.f ? currentFrame / macro.framerate : 0.f;
+			}
+			ImGui::SameLine();
+			ImGui::Text("Recording: %u actions", (unsigned)macro.inputs.size());
+		} else if (playerMode == PLAYBACK) {
+			if (GUI::button("Stop Playback"))
+				stopAndroidPlayback();
+			ImGui::SameLine();
+			ImGui::Text("Playing: %u / %u", actionIndex, (unsigned)macro.inputs.size());
+		} else if (GUI::button("Start Recording")) {
+			macro = Macro();
+			macro.inputs.clear();
+			macro.framerate = Common::getTPS();
+			if (macro.framerate <= 0.f) macro.framerate = 60.f;
+			currentFrame = 0;
+			actionIndex = 0;
+			macro.levelInfo.id = PlayLayer::get()->m_level->m_levelID.value();
+			macro.levelInfo.name = PlayLayer::get()->m_level->m_levelName;
+			playerMode = RECORDING;
+		}
+		GUI::inputText("Macro name", &macroName);
+		if (GUI::button("Save Macro")) {
+			if (playerMode == RECORDING) {
+				ImGui::TextColored(ImVec4(1.f, .65f, .2f, 1.f), "Stop recording before saving.");
+			} else {
+				save(macroName);
+				getMacros();
+			}
+		}
+		ImGui::Separator();
+		ImGui::Text("Saved macros");
+		if (macroList.empty()) getMacros();
+		for (auto it = macroList.begin(); it != macroList.end(); ) {
+			ImGui::PushID(it->first.c_str());
+			ImGui::Text("%s (%u actions)", it->first.c_str(), (unsigned)it->second.inputs.size());
+			if (GUI::button("Load")) {
+				if (load(it->first)) macroName = it->first;
+			}
+			ImGui::SameLine();
+			if (GUI::button("Play")) {
+				if (playerMode == DISABLED && load(it->first) && !macro.inputs.empty()) {
+					currentFrame = 0;
+					actionIndex = 0;
+					playbackHeld1.clear();
+					playbackHeld2.clear();
+					playerMode = PLAYBACK;
+				}
+			}
+			ImGui::SameLine();
+			bool removeThis = GUI::button("Delete");
+			ImGui::PopID();
+			if (removeThis) {
+				remove(it->first);
+				it = macroList.erase(it);
+			} else ++it;
+		}
+	}
 #endif
+#if !defined(__ANDROID__)
 	if (GUI::shouldRender())
 	{
 		if (ImGui::RadioButton("Disable", (int*)&Macrobot::playerMode, (int)DISABLED))
@@ -767,6 +865,7 @@ void Macrobot::drawWindow()
 		ImGuiWindowFlags_AlwaysAutoResize);
 
 	GUI::marker("[INFO]", "Corrections are recommended to be safe, but the bot also works decently without.");
+#endif
 }
 
 void Macrobot::getMacros()
