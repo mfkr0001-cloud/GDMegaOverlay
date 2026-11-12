@@ -25,6 +25,15 @@
 
 using namespace geode::prelude;
 
+#if defined(__ANDROID__)
+namespace GUI
+{
+    // Implemented in Window.cpp
+    ImVec2 androidScreenSize();
+    bool fitWindowToScreen(Window& window);
+}
+#endif
+
 class $modify(CCKeyboardDispatcher)
 {
     bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr, double time)
@@ -98,10 +107,9 @@ ImVec2 GUI::getJsonPosition(const std::string& name)
 #if defined(__ANDROID__)
     // Saved Android window coordinates are normalized against ImGui's logical
     // display size (the same coordinate space used by Window::visibleInScreen).
-    auto winSize = cocos2d::CCSize(
-        ImGui::GetIO().DisplaySize.x,
-        ImGui::GetIO().DisplaySize.y
-    );
+    // If ImGui has no display size yet, the cocos frame size is used instead.
+    const ImVec2 androidScreen = androidScreenSize();
+    auto winSize = cocos2d::CCSize(androidScreen.x, androidScreen.y);
 #else
     auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect().size;
 #endif
@@ -130,10 +138,8 @@ ImVec2 GUI::getJsonSize(const std::string& name, ImVec2 defaultSize)
     }
 
 #if defined(__ANDROID__)
-    auto winSize = cocos2d::CCSize(
-        ImGui::GetIO().DisplaySize.x,
-        ImGui::GetIO().DisplaySize.y
-    );
+    const ImVec2 androidScreen = androidScreenSize();
+    auto winSize = cocos2d::CCSize(androidScreen.x, androidScreen.y);
 #else
     auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect().size;
 #endif
@@ -206,9 +212,10 @@ void GUI::init()
     load();
 
 #if defined(__ANDROID__)
-    // Apply the compact Android layout once per layout revision.
+    // Apply the Android tiled layout (4 columns x 3 rows, every window inside
+    // the screen) once per layout revision.
     // Existing user layouts are preserved on later launches.
-    constexpr int kAndroidLayoutRevision = 6;
+    constexpr int kAndroidLayoutRevision = 7;
     const int appliedLayoutRevision =
         Mod::get()->getSavedValue<int>("android-layout-revision", 0);
     if (appliedLayoutRevision < kAndroidLayoutRevision) {
@@ -296,6 +303,12 @@ void GUI::toggle()
 
     windowActions.clear();
 
+#if defined(__ANDROID__)
+    // Make sure every window target position is on screen before animating.
+    for (Window& w : windows)
+        fitWindowToScreen(w);
+#endif
+
     int direction = std::rand() % 8 + 1;
 
     for (Window& w : windows)
@@ -364,6 +377,10 @@ void GUI::addWindow(Window window)
         };
     }
 
+#if defined(__ANDROID__)
+    fitWindowToScreen(window);
+#endif
+
     int direction = std::rand() % 4 + 1;
 
     uint8_t animationType = (window.name.length() + direction) % 4;
@@ -390,12 +407,25 @@ void GUI::addWindow(Window window)
 
 void GUI::save()
 {
-    for (Window& w : windows)
+#if defined(__ANDROID__)
+    ImVec2 saveScreen = androidScreenSize();
+#else
+    ImVec2 saveScreen = ImGui::GetIO().DisplaySize;
+#endif
+
+    // Never divide by a zero display size: it would write inf/NaN into the json.
+    if (saveScreen.x > 1.f && saveScreen.y > 1.f)
     {
-        windowPositions[w.name]["x"] = (float)w.position.x / (float)ImGui::GetIO().DisplaySize.x;
-        windowPositions[w.name]["y"] = (float)w.position.y / (float)ImGui::GetIO().DisplaySize.y;
-        windowPositions[w.name]["w"] = (float)w.size.x / (float)ImGui::GetIO().DisplaySize.x;
-        windowPositions[w.name]["h"] = (float)w.size.y / (float)ImGui::GetIO().DisplaySize.y;
+        for (Window& w : windows)
+        {
+#if defined(__ANDROID__)
+            fitWindowToScreen(w);
+#endif
+            windowPositions[w.name]["x"] = (float)w.position.x / saveScreen.x;
+            windowPositions[w.name]["y"] = (float)w.position.y / saveScreen.y;
+            windowPositions[w.name]["w"] = (float)w.size.x / saveScreen.x;
+            windowPositions[w.name]["h"] = (float)w.size.y / saveScreen.y;
+        }
     }
 
     std::ofstream f(Mod::get()->getSaveDir() / "windows.json");
@@ -481,6 +511,46 @@ void GUI::load()
     f.close();
 }
 
+#if defined(__ANDROID__)
+// Tiled Android layout in normalized (0..1) screen coordinates:
+// 4 columns x 3 rows, every window fully inside the screen, readable width.
+static void applyAndroidDefaultLayout()
+{
+    constexpr float kMarginX = 0.012f;
+    constexpr float kMarginY = 0.02f;
+    constexpr float kGapY = 0.02f;
+    constexpr int kCols = 4;
+    constexpr int kRows = 3;
+    constexpr float kCellW = (1.f - kMarginX * (kCols + 1)) / kCols; // ~0.238
+    constexpr float kCellH = (1.f - kMarginY * 2.f - kGapY * (kRows - 1)) / kRows; // ~0.307
+
+    static const char* const order[kRows][kCols] = {
+        {"General", "Global", "Level", "Player"},
+        {"Bypass", "Creator", "Macro Bot", "Recorder"},
+        {"Labels", "Shortcuts", "Menu Settings", "Recording"},
+    };
+
+    for (int r = 0; r < kRows; ++r)
+    {
+        for (int c = 0; c < kCols; ++c)
+        {
+            json& entry = GUI::windowPositions[order[r][c]];
+            entry["x"] = kMarginX + c * (kCellW + kMarginX);
+            entry["y"] = kMarginY + r * (kCellH + kGapY);
+            entry["w"] = kCellW;
+            entry["h"] = kCellH;
+        }
+    }
+
+    // Style Editor is opened on demand: big, centered window.
+    json& style = GUI::windowPositions["Style Editor"];
+    style["x"] = 0.20f;
+    style["y"] = 0.08f;
+    style["w"] = 0.60f;
+    style["h"] = 0.84f;
+}
+#endif
+
 void GUI::resetDefault()
 {
     std::ifstream f(Mod::get()->getResourcesDir() / "default_windows.json");
@@ -505,11 +575,24 @@ void GUI::resetDefault()
 
     f.close();
 
+    if (!windowPositions.is_object())
+        windowPositions = json::object();
+
+#if defined(__ANDROID__)
+    // Desktop defaults are made for a 1920px wide window; on Android they give
+    // narrow columns that run off the screen, so use the tiled layout instead.
+    applyAndroidDefaultLayout();
+#endif
+
     for (Window& window : windows)
     {
         window.position = getJsonPosition(window.name);
-        window.renderPosition = window.position;
         window.size = getJsonSize(window.name, window.size);
+#if defined(__ANDROID__)
+        window.renderPosition = window.position;
+        fitWindowToScreen(window);
+#endif
+        window.renderPosition = window.position;
     }
 }
 
