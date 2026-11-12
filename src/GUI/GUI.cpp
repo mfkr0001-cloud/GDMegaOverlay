@@ -28,7 +28,6 @@ using namespace geode::prelude;
 #if defined(__ANDROID__)
 namespace GUI
 {
-    // Implemented in Window.cpp
     ImVec2 androidScreenSize();
     bool fitWindowToScreen(Window& window);
 }
@@ -105,9 +104,6 @@ ImVec2 GUI::getJsonPosition(const std::string& name)
     }
 
 #if defined(__ANDROID__)
-    // Saved Android window coordinates are normalized against ImGui's logical
-    // display size (the same coordinate space used by Window::visibleInScreen).
-    // If ImGui has no display size yet, the cocos frame size is used instead.
     const ImVec2 androidScreen = androidScreenSize();
     auto winSize = cocos2d::CCSize(androidScreen.x, androidScreen.y);
 #else
@@ -164,11 +160,11 @@ void GUI::init()
     hasLateInit = false;
     uiSizeFactor = CCDirector::sharedDirector()->getOpenGLView()->getFrameSize().width / 1920.0f;
     uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
+
 #if defined(__ANDROID__)
-    // Apply the Android scale before fonts and default window sizes are created.
-    // This keeps text, widgets, tabs and window geometry in the same scale.
     uiSizeFactor *= 0.42f;
 #endif
+
     Blur::compiled = false;
 
     windowPositions = json::object();
@@ -212,19 +208,22 @@ void GUI::init()
     load();
 
 #if defined(__ANDROID__)
-    // Apply the Android tiled layout (4 columns x 3 rows, every window inside
-    // the screen) once per layout revision.
-    // Existing user layouts are preserved on later launches.
-    constexpr int kAndroidLayoutRevision = 7;
+    // Revision 8: restore the original proportional window layout.
+    // The Android-specific 4x3 tiled layout is no longer applied.
+    constexpr int kAndroidLayoutRevision = 8;
     const int appliedLayoutRevision =
         Mod::get()->getSavedValue<int>("android-layout-revision", 0);
-    if (appliedLayoutRevision < kAndroidLayoutRevision) {
+
+    if (appliedLayoutRevision < kAndroidLayoutRevision)
+    {
         GUI::resetDefault();
         GUI::save();
+
         Mod::get()->setSavedValue<int>(
             "android-layout-revision",
             kAndroidLayoutRevision
         );
+
         Mod::get()->saveData();
     }
 #endif
@@ -241,8 +240,6 @@ void GUI::draw()
     uiSizeFactor *= Settings::get<float>("menu/ui_scale", 1.f);
 
 #if defined(__ANDROID__)
-    // Keep draw-time widget constraints in sync with the font and window scale
-    // selected in GUI::init().
     uiSizeFactor *= 0.42f;
 #endif
 
@@ -304,7 +301,6 @@ void GUI::toggle()
     windowActions.clear();
 
 #if defined(__ANDROID__)
-    // Make sure every window target position is on screen before animating.
     for (Window& w : windows)
         fitWindowToScreen(w);
 #endif
@@ -382,7 +378,6 @@ void GUI::addWindow(Window window)
 #endif
 
     int direction = std::rand() % 4 + 1;
-
     uint8_t animationType = (window.name.length() + direction) % 4;
 
     switch (animationType)
@@ -413,7 +408,6 @@ void GUI::save()
     ImVec2 saveScreen = ImGui::GetIO().DisplaySize;
 #endif
 
-    // Never divide by a zero display size: it would write inf/NaN into the json.
     if (saveScreen.x > 1.f && saveScreen.y > 1.f)
     {
         for (Window& w : windows)
@@ -511,46 +505,6 @@ void GUI::load()
     f.close();
 }
 
-#if defined(__ANDROID__)
-// Tiled Android layout in normalized (0..1) screen coordinates:
-// 4 columns x 3 rows, every window fully inside the screen, readable width.
-static void applyAndroidDefaultLayout()
-{
-    constexpr float kMarginX = 0.012f;
-    constexpr float kMarginY = 0.02f;
-    constexpr float kGapY = 0.02f;
-    constexpr int kCols = 4;
-    constexpr int kRows = 3;
-    constexpr float kCellW = (1.f - kMarginX * (kCols + 1)) / kCols; // ~0.238
-    constexpr float kCellH = (1.f - kMarginY * 2.f - kGapY * (kRows - 1)) / kRows; // ~0.307
-
-    static const char* const order[kRows][kCols] = {
-        {"General", "Global", "Level", "Player"},
-        {"Bypass", "Creator", "Macro Bot", "Recorder"},
-        {"Labels", "Shortcuts", "Menu Settings", "Recording"},
-    };
-
-    for (int r = 0; r < kRows; ++r)
-    {
-        for (int c = 0; c < kCols; ++c)
-        {
-            json& entry = GUI::windowPositions[order[r][c]];
-            entry["x"] = kMarginX + c * (kCellW + kMarginX);
-            entry["y"] = kMarginY + r * (kCellH + kGapY);
-            entry["w"] = kCellW;
-            entry["h"] = kCellH;
-        }
-    }
-
-    // Style Editor is opened on demand: big, centered window.
-    json& style = GUI::windowPositions["Style Editor"];
-    style["x"] = 0.20f;
-    style["y"] = 0.08f;
-    style["w"] = 0.60f;
-    style["h"] = 0.84f;
-}
-#endif
-
 void GUI::resetDefault()
 {
     std::ifstream f(Mod::get()->getResourcesDir() / "default_windows.json");
@@ -578,20 +532,19 @@ void GUI::resetDefault()
     if (!windowPositions.is_object())
         windowPositions = json::object();
 
-#if defined(__ANDROID__)
-    // Desktop defaults are made for a 1920px wide window; on Android they give
-    // narrow columns that run off the screen, so use the tiled layout instead.
-    applyAndroidDefaultLayout();
-#endif
+    // Keep the original normalized layout from default_windows.json.
+    // No Android-specific grid or position override is applied here.
 
     for (Window& window : windows)
     {
         window.position = getJsonPosition(window.name);
         window.size = getJsonSize(window.name, window.size);
+
 #if defined(__ANDROID__)
         window.renderPosition = window.position;
         fitWindowToScreen(window);
 #endif
+
         window.renderPosition = window.position;
     }
 }
@@ -632,7 +585,6 @@ void GUI::loadStyle(const std::filesystem::path& name)
 
 void GUI::setFont(const std::filesystem::path& font)
 {
-    // Reduce only the text size; keep window dimensions and widget spacing unchanged.
     ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(
         font.string().c_str(),
         fontScale * uiSizeFactor * 0.65f
@@ -650,8 +602,6 @@ void GUI::setStyle()
     float g = Settings::get<float>("menu/window/color/g", 0.18f);
     float b = Settings::get<float>("menu/window/color/b", 0.63f);
 
-    // Match the dark plum panels in the reference overlay while leaving
-    // the user's opacity, blur and title color controls available.
     GUI::loadedStyle.Colors[ImGuiCol_WindowBg] = {0.075f, 0.035f, 0.080f, 1.0f};
 
     if (Settings::get<bool>("menu/window/rainbow/enabled"))
