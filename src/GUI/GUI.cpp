@@ -208,7 +208,7 @@ void GUI::init()
 #if defined(__ANDROID__)
     // Apply the compact Android layout once per layout revision.
     // Existing user layouts are preserved on later launches.
-    constexpr int kAndroidLayoutRevision = 5;
+    constexpr int kAndroidLayoutRevision = 6;
     const int appliedLayoutRevision =
         Mod::get()->getSavedValue<int>("android-layout-revision", 0);
     if (appliedLayoutRevision < kAndroidLayoutRevision) {
