@@ -1,7 +1,7 @@
 #pragma once
 
 namespace OverlayInput {
-    // Floating control is attached directly to the main menu and pause layer on Android.
+    // Floating control is attached to every running scene on Android.
     void install();
 
     // Draws the ImGui close control while the overlay menu is open.
