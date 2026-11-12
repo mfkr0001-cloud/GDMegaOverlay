@@ -22,7 +22,7 @@ The original project contains desktop executable offsets and Windows-only integr
 ## Verification status
 
 - Source/archive inspection: completed.
-- Static source review: in progress.
+- Static source review: updated for Android window visibility and basic Macro Bot support.
 - CMake configuration/build: not verified in this environment because a matching Geode SDK + Android NDK toolchain is not installed here.
 - Runtime touch behavior on a physical Android device: not verified.
 - `.geode` package: not yet produced or verified.
