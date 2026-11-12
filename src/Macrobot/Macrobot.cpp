@@ -65,8 +65,10 @@ class $modify(PlayLayer)
 {
     void onQuit()
     {
-        if (recorder.m_recording)
-            recorder.stop();
+        // Stop the active Macro Bot mode before leaving the level.
+        // This project uses playerMode/macro, not a separate `recorder` object.
+        if (playerMode == RECORDING)
+            playerMode = DISABLED;
 #if !defined(__ANDROID__)
         checkpoints.clear();
 #endif
