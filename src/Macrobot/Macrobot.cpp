@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <algorithm>
 #include "../Common.h"
 #include "../ConstData.h"
 #include "../GUI/GUI.h"
@@ -29,6 +30,10 @@
 using namespace geode::prelude;
 using namespace Macrobot;
 
+#if defined(__ANDROID__)
+static void stopAndroidPlayback();
+#endif
+
 class $modify(CCKeyboardDispatcher)
 {
 	bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool arr, double time)
@@ -56,111 +61,126 @@ class $modify(CCKeyboardDispatcher)
 	}
 };
 
-#if !defined(__ANDROID__)
 class $modify(PlayLayer)
 {
-	void onQuit()
-	{
-		PlayLayer::onQuit();
-		checkpoints.clear();
-	}
+    void onQuit()
+    {
+        if (recorder.m_recording)
+            recorder.stop();
+#if !defined(__ANDROID__)
+        checkpoints.clear();
+#endif
+#if defined(__ANDROID__)
+        stopAndroidPlayback();
+#endif
+        playerMode = DISABLED;
+        PlayLayer::onQuit();
+    }
 
-	void onExit()
-	{
-		botInput = false;
-		PlayLayer::onExit();
-	}
+    void onExit()
+    {
+        botInput = false;
+        PlayLayer::onExit();
+    }
 
-	void loadFromCheckpoint(CheckpointObject * checkpoint)
-	{
-		resetFromStart = false;
-		if (checkpoints.contains(checkpoint) && playerMode != DISABLED && PlayLayer::get())
-		{
-			CheckpointData checkpointData = checkpoints[checkpoint];
+#if !defined(__ANDROID__)
+    void loadFromCheckpoint(CheckpointObject* checkpoint)
+    {
+        resetFromStart = false;
+        if (checkpoints.contains(checkpoint) && playerMode != DISABLED && PlayLayer::get())
+        {
+            CheckpointData checkpointData = checkpoints[checkpoint];
 
-			if(playerMode == RECORDING)
-			{
-				const auto check = [&](const Action &action) -> bool { return action.frame > checkpointData.frame; };
-				macro.inputs.erase(std::remove_if (macro.inputs.begin(), macro.inputs.end(), check), macro.inputs.end());
-			}
-			
-			PlayLayer::loadFromCheckpoint(checkpoint);
+            if (playerMode == RECORDING)
+            {
+                const auto check = [&](const Action& action) -> bool { return action.frame > checkpointData.frame; };
+                macro.inputs.erase(std::remove_if(macro.inputs.begin(), macro.inputs.end(), check), macro.inputs.end());
+            }
 
-			*(int*)((char*)base::get() + 0x4F24A8) = checkpointData.randomSeed;
+            PlayLayer::loadFromCheckpoint(checkpoint);
+            *(int*)((char*)base::get() + 0x4F24A8) = checkpointData.randomSeed;
+            checkpointData.p1.apply(this->m_player1, true);
+            if (MBO(bool, this, 878))
+                checkpointData.p2.apply(this->m_player2, true);
+        }
+        else
+            PlayLayer::loadFromCheckpoint(checkpoint);
+    }
+#endif
 
-			checkpointData.p1.apply(this->m_player1, true);
-			if (MBO(bool, this, 878))
-				checkpointData.p2.apply(this->m_player2, true);
-		}
-		else
-			PlayLayer::loadFromCheckpoint(checkpoint);
-	}
+    void resetLevel()
+    {
+#if defined(__ANDROID__)
+        PlayLayer::resetLevel();
+        currentFrame = 0;
+        actionIndex = 0;
+        if (playerMode == RECORDING)
+        {
+            macro.inputs.clear();
+            macro.framerate = std::max(1.f, Common::getTPS());
+            if (auto* level = PlayLayer::get() ? PlayLayer::get()->m_level : nullptr)
+            {
+                macro.levelInfo.id = level->m_levelID.value();
+                macro.levelInfo.name = level->m_levelName;
+            }
+        }
+        return;
+#else
+        holdingAdvance = false;
+        targetSteps = 0;
 
-	void resetLevel()
-	{
-		holdingAdvance = false;
-		targetSteps = 0;
-		
-		if (playerMode != DISABLED)
-		{
-			actionIndex = 0;
+        if (playerMode != DISABLED)
+        {
+            actionIndex = 0;
+            resetFromStart = true;
+            resetFrame = true;
+            downForKey1.clear();
+            downForKey2.clear();
+            timeForKey1.clear();
+            timeForKey2.clear();
+            PlayLayer::resetLevel();
 
-			resetFromStart = true;
-			resetFrame = true;
+            GJGameLevel* level = PlayLayer::get()->m_level;
+            macro.levelInfo.id = level->m_levelID.value();
+            macro.levelInfo.name = level->m_levelName;
 
-			downForKey1.clear();
-			downForKey2.clear();
-			timeForKey1.clear();
-			timeForKey2.clear();
+            if (resetFromStart)
+            {
+                if (playerMode == RECORDING)
+                {
+                    checkpoints.clear();
+                    macro.inputs.clear();
+                    macro.framerate = Common::getTPS();
+                    macro.seed = *(int*)((char*)base::get() + 0x4F24A8);
+                }
+                else
+                    *(int*)((char*)base::get() + 0x4F24A8) = macro.seed;
+            }
 
-			PlayLayer::resetLevel();
+            resetFrame = false;
+            if (this->m_player1->m_isPlatformer)
+            {
+                if ((ImGui::IsKeyDown(ImGuiKey_RightArrow) || ImGui::IsKeyDown(ImGuiKey_D)) &&
+                    !(ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_A)))
+                    this->m_player1->pushButton(PlayerButton::Right);
+                else if (!(ImGui::IsKeyDown(ImGuiKey_RightArrow) || ImGui::IsKeyDown(ImGuiKey_D)) &&
+                         (ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_A)))
+                    this->m_player1->pushButton(PlayerButton::Left);
+            }
 
-			GJGameLevel *level = PlayLayer::get()->m_level;
-			macro.levelInfo.id = level->m_levelID.value();
-			macro.levelInfo.name = level->m_levelName;
-
-			if (resetFromStart)
-			{
-				if(playerMode == RECORDING)
-				{
-					checkpoints.clear();
-					macro.inputs.clear();
-
-					macro.framerate = Common::getTPS();
-
-					macro.seed = *(int*)((char*)base::get() + 0x4F24A8);
-				}
-				else
-					*(int*)((char*)base::get() + 0x4F24A8) = macro.seed;
-			}
-
-			resetFrame = false;
-
-			if (this->m_player1->m_isPlatformer)
-			{
-				if ((ImGui::IsKeyDown(ImGuiKey_RightArrow) || ImGui::IsKeyDown(ImGuiKey_D)) &&
-					!(ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_A)))
-					this->m_player1->pushButton(PlayerButton::Right);
-				else if (!(ImGui::IsKeyDown(ImGuiKey_RightArrow) || ImGui::IsKeyDown(ImGuiKey_D)) &&
-						(ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_A)))
-					this->m_player1->pushButton(PlayerButton::Left);
-			}
-
-			if (playerMode == RECORDING)
-			{
-				//TODO only do this when necessary
-				bool isDual = MBO(bool, this, 878);
-
-				Macrobot::recordAction(PlayerButton::Jump, this->m_gameState.m_unk1f8 + 1, false, true);
-				if (isDual)
-					Macrobot::recordAction(PlayerButton::Jump, this->m_gameState.m_unk1f8 + 1, false, false);
-			}
-		}
-		else
-			PlayLayer::resetLevel();
-	}
+            if (playerMode == RECORDING)
+            {
+                bool isDual = MBO(bool, this, 878);
+                Macrobot::recordAction(PlayerButton::Jump, this->m_gameState.m_unk1f8 + 1, false, true);
+                if (isDual)
+                    Macrobot::recordAction(PlayerButton::Jump, this->m_gameState.m_unk1f8 + 1, false, false);
+            }
+        }
+        else
+            PlayLayer::resetLevel();
+#endif
+    }
 };
-#endif // !__ANDROID__
 
 class $modify(PlayerObject)
 {
@@ -179,6 +199,9 @@ class $modify(PlayerObject)
 				return;
 
 			recordAction(btn, currentFrame, true, this == pl->m_player1);
+#if defined(__ANDROID__)
+			(this == pl->m_player1 ? recordingHeld1 : recordingHeld2)[(int)btn] = true;
+#endif
 		}
 	}
 
@@ -203,6 +226,9 @@ class $modify(PlayerObject)
 				return;
 
 			recordAction(btn, currentFrame, false, this == pl->m_player1);
+#if defined(__ANDROID__)
+			(this == pl->m_player1 ? recordingHeld1 : recordingHeld2)[(int)btn] = false;
+#endif
 		}
 	}
 };
@@ -214,11 +240,13 @@ Macrobot::Action* Macrobot::recordAction(PlayerButton key, uint32_t frame, bool 
 	PlayLayer* pl = PlayLayer::get();
 	PlayerObject* player = player1 ? pl->m_player1 : pl->m_player2;
 
+#if !defined(__ANDROID__)
 	if ((CorrectionType)Settings::get<int>("macrobot/corrections") == ACTION && (player->m_position.x != 0 && player->m_position.y != 0))
 	{
 		ac.correction = Correction(frame, !player1);
 		ac.correction->checkpoint.fromPlayer(player, false);
 	}
+#endif
 
 	macro.inputs.push_back(ac);
 
@@ -230,24 +258,29 @@ class $modify(GJBaseGameLayer)
 	void update(float dt)
 	{
 #if defined(__ANDROID__)
-		GJBaseGameLayer::update(dt);
-		++currentFrame;
+		// Apply inputs at the beginning of their recorded game frame, before
+		// the physics update for that frame runs.
 		if (playerMode == PLAYBACK && PlayLayer::get()) {
-			while (actionIndex < macro.inputs.size() &&
-				   currentFrame >= macro.inputs[actionIndex].frame) {
+			while (actionIndex < macro.inputs.size() && currentFrame >= macro.inputs[actionIndex].frame) {
 				handleAction(macro.inputs[actionIndex]);
 				++actionIndex;
 			}
-			if (actionIndex >= macro.inputs.size()) {
+		}
+		GJBaseGameLayer::update(dt);
+		++currentFrame;
+		if (playerMode == PLAYBACK && actionIndex >= macro.inputs.size()) {
+			if (auto* pl = PlayLayer::get()) {
+				botInput = true;
 				for (const auto& [button, down] : playbackHeld1)
-					if (down) PlayLayer::get()->handleButton(false, button, true);
+					if (down) pl->handleButton(false, button, true);
 				for (const auto& [button, down] : playbackHeld2)
-					if (down) PlayLayer::get()->handleButton(false, button, false);
-				playbackHeld1.clear();
-				playbackHeld2.clear();
-				playerMode = DISABLED;
-				actionIndex = 0;
+					if (down) pl->handleButton(false, button, false);
+				botInput = false;
 			}
+			playbackHeld1.clear();
+			playbackHeld2.clear();
+			playerMode = DISABLED;
+			actionIndex = 0;
 		}
 		return;
 #else
@@ -699,10 +732,12 @@ bool Macrobot::clickBetweenFramesCheck()
 static void stopAndroidPlayback()
 {
 	if (auto* pl = PlayLayer::get()) {
+		botInput = true;
 		for (const auto& [button, down] : playbackHeld1)
 			if (down) pl->handleButton(false, button, true);
 		for (const auto& [button, down] : playbackHeld2)
 			if (down) pl->handleButton(false, button, false);
+		botInput = false;
 	}
 	playbackHeld1.clear();
 	playbackHeld2.clear();
@@ -714,72 +749,97 @@ static void stopAndroidPlayback()
 void Macrobot::drawWindow()
 {
 #if defined(__ANDROID__)
-	ImGui::TextWrapped("Android basic macro mode records player button presses/releases and replays them by game frame. Checkpoint corrections and frame-step are unavailable in this Android port.");
-	if (!PlayLayer::get()) {
-		ImGui::TextDisabled("Enter a level to record or play a macro.");
-	} else {
-		if (playerMode == RECORDING) {
-			if (GUI::button("Stop Recording")) {
+	if (GUI::shouldRender())
+	{
+		if (playerMode == RECORDING)
+		{
+			ImGui::TextColored(ImVec4(1.f, 0.35f, 0.25f, 1.f), "Recording input...");
+			if (GUI::button("Stop Recording##android-macro")) {
+				for (const auto& [button, down] : recordingHeld1)
+					if (down) recordAction(static_cast<PlayerButton>(button), currentFrame, false, true);
+				for (const auto& [button, down] : recordingHeld2)
+					if (down) recordAction(static_cast<PlayerButton>(button), currentFrame, false, false);
+				recordingHeld1.clear();
+				recordingHeld2.clear();
 				playerMode = DISABLED;
 				macro.duration = macro.framerate > 0.f ? currentFrame / macro.framerate : 0.f;
 			}
-			ImGui::SameLine();
-			ImGui::Text("Recording: %u actions", (unsigned)macro.inputs.size());
-		} else if (playerMode == PLAYBACK) {
-			if (GUI::button("Stop Playback"))
-				stopAndroidPlayback();
-			ImGui::SameLine();
-			ImGui::Text("Playing: %u / %u", actionIndex, (unsigned)macro.inputs.size());
-		} else if (GUI::button("Start Recording")) {
-			macro = Macro();
-			macro.inputs.clear();
-			macro.framerate = Common::getTPS();
-			if (macro.framerate <= 0.f) macro.framerate = 60.f;
-			currentFrame = 0;
-			actionIndex = 0;
-			macro.levelInfo.id = PlayLayer::get()->m_level->m_levelID.value();
-			macro.levelInfo.name = PlayLayer::get()->m_level->m_levelName;
-			playerMode = RECORDING;
 		}
-		GUI::inputText("Macro name", &macroName);
-		if (GUI::button("Save Macro")) {
-			if (playerMode == RECORDING) {
-				ImGui::TextColored(ImVec4(1.f, .65f, .2f, 1.f), "Stop recording before saving.");
-			} else {
+		else if (playerMode == PLAYBACK)
+		{
+			ImGui::TextColored(ImVec4(0.35f, 0.85f, 1.f, 1.f), "Playing macro...");
+			if (GUI::button("Stop Playback##android-macro"))
+				stopAndroidPlayback();
+		}
+		else
+		{
+			if (GUI::button("Start Recording##android-macro"))
+			{
+				if (!PlayLayer::get())
+					Common::showWithPriority(FLAlertLayer::create("Macro Bot", "Enter a level before recording.", "OK"));
+				else
+				{
+					playerMode = RECORDING;
+					currentFrame = 0;
+					actionIndex = 0;
+					macro.inputs.clear();
+					playbackHeld1.clear();
+					playbackHeld2.clear();
+					PlayLayer::get()->resetLevel();
+				}
+			}
+		}
+
+		GUI::inputText("Name##android-macro", &macroName);
+		GUI::inputText("Description##android-macro", &macroDescription);
+		if (GUI::button("Save Macro##android-macro"))
+		{
+			if (playerMode != DISABLED)
+				Common::showWithPriority(FLAlertLayer::create("Macro Bot", "Stop the current macro operation before saving.", "OK"));
+			else {
 				save(macroName);
 				getMacros();
 			}
 		}
+		if (GUI::button("Refresh Macros##android-macro"))
+			getMacros();
+
 		ImGui::Separator();
-		ImGui::Text("Saved macros");
-		if (macroList.empty()) getMacros();
-		for (auto it = macroList.begin(); it != macroList.end(); ) {
-			ImGui::PushID(it->first.c_str());
-			ImGui::Text("%s (%u actions)", it->first.c_str(), (unsigned)it->second.inputs.size());
-			if (GUI::button("Load")) {
-				if (load(it->first)) macroName = it->first;
-			}
+		ImGui::TextUnformatted("Saved macros");
+		for (auto& pair : macroList)
+		{
+			ImGui::PushID(pair.first.c_str());
+			ImGui::Text("%s", pair.first.c_str());
 			ImGui::SameLine();
-			if (GUI::button("Play")) {
-				if (playerMode == DISABLED && load(it->first) && !macro.inputs.empty()) {
-					currentFrame = 0;
+			if (GUI::button("Play"))
+			{
+				if (playerMode != DISABLED)
+					Common::showWithPriority(FLAlertLayer::create("Macro Bot", "Stop the current macro operation first.", "OK"));
+				else if (!PlayLayer::get())
+					Common::showWithPriority(FLAlertLayer::create("Macro Bot", "Open a level before playback.", "OK"));
+				else if (load(pair.first))
+				{
+					playerMode = PLAYBACK;
 					actionIndex = 0;
+					currentFrame = 0;
 					playbackHeld1.clear();
 					playbackHeld2.clear();
-					playerMode = PLAYBACK;
+					PlayLayer::get()->resetLevel();
 				}
 			}
 			ImGui::SameLine();
-			bool removeThis = GUI::button("Delete");
+			if (GUI::button("Delete"))
+			{
+				remove(pair.first);
+				getMacros();
+				ImGui::PopID();
+				break;
+			}
 			ImGui::PopID();
-			if (removeThis) {
-				remove(it->first);
-				it = macroList.erase(it);
-			} else ++it;
 		}
 	}
+	return;
 #endif
-#if !defined(__ANDROID__)
 	if (GUI::shouldRender())
 	{
 		if (ImGui::RadioButton("Disable", (int*)&Macrobot::playerMode, (int)DISABLED))
@@ -865,7 +925,6 @@ void Macrobot::drawWindow()
 		ImGuiWindowFlags_AlwaysAutoResize);
 
 	GUI::marker("[INFO]", "Corrections are recommended to be safe, but the bot also works decently without.");
-#endif
 }
 
 void Macrobot::getMacros()
