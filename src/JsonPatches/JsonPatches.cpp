@@ -11,91 +11,84 @@ using namespace geode::prelude;
 
 void JsonPatches::init()
 {
-#if defined(__ANDROID__)
-	log::warn("GDMegaOverlay: original JSON patch addresses are desktop-only; patch groups are disabled on Android.");
-	return;
-#endif
-	auto append_patches = [](JsonPatches::patch_group_type& patchGroup, nlohmann::json& mods)
+	// Load the patch definitions from their actual resource directory. On Android
+	// the definitions are still loaded so their controls remain visible, but the
+	// original opcode addresses are desktop-only and must never be applied there.
+	auto load_group = [](const std::string& relativePath, JsonPatches::patch_group_type& group)
 	{
-		for (const auto& jsonPatch : mods)	
-		{
-			JPatch jpatch{};
+		const auto filePath = Mod::get()->getResourcesDir() / relativePath;
+		std::ifstream file(filePath);
+		if (!file.is_open()) {
+			log::error("GDMegaOverlay: unable to open patch definitions: {}", filePath.string());
+			return;
+		}
 
-			jpatch.description = jsonPatch["description"];
+		nlohmann::json document;
+		try {
+			file >> document;
+		}
+		catch (const nlohmann::json::exception& error) {
+			log::error("GDMegaOverlay: invalid patch definitions in {}: {}", relativePath, error.what());
+			return;
+		}
 
-			//log::debug("Patch {} first opcode {}", jsonPatch["name"].get<std::string>(), std::stoul(jsonPatch["opcodes"][0]["address"].get<std::string>(), nullptr, 16));
+		if (!document.is_object() || !document.contains("mods") || !document["mods"].is_array()) {
+			log::error("GDMegaOverlay: patch definitions have no mods array: {}", relativePath);
+			return;
+		}
 
-			for (const auto& patch : jsonPatch["opcodes"])
-			{
-				bool isCocos = patch.contains("lib") && patch["lib"].get<std::string>() == "libcocos2d.dll";
-				unsigned long address = std::stoul(patch["address"].get<std::string>(), nullptr, 16);
+		for (const auto& item : document["mods"]) {
+			if (!item.is_object() || !item.contains("name") || !item["name"].is_string())
+				continue;
 
-				const std::uintptr_t base = base::get();
+			JPatch patch{};
+			patch.description = item.value("description", std::string{});
 
-				auto gpatch = Mod::get()->patch(reinterpret_cast<void*>(base + address), util::hexToBytes(patch["on"]));
-				
-				if (gpatch.isOk())
-				{
-					auto gpatchptr = gpatch.unwrap();
-					gpatchptr->disable();
-
-					jpatch.patches.push_back(gpatchptr);
+#if !defined(__ANDROID__)
+			if (item.contains("opcodes") && item["opcodes"].is_array()) {
+				for (const auto& opcode : item["opcodes"]) {
+					if (!opcode.is_object() || !opcode.contains("address") || !opcode.contains("on"))
+						continue;
+					try {
+						const auto address = std::stoul(opcode["address"].get<std::string>(), nullptr, 16);
+						const auto bytes = util::hexToBytes(opcode["on"].get<std::string>());
+						auto result = Mod::get()->patch(reinterpret_cast<void*>(base::get() + address), bytes);
+						if (result.isOk()) {
+							auto* nativePatch = result.unwrap();
+							nativePatch->disable();
+							patch.patches.push_back(nativePatch);
+						}
+						else {
+							log::error("GDMegaOverlay: failed to prepare patch '{}': {}", item["name"].get<std::string>(), result.err());
+						}
+					}
+					catch (const std::exception& error) {
+						log::error("GDMegaOverlay: invalid opcode in '{}': {}", item["name"].get<std::string>(), error.what());
+					}
 				}
-				else
-					log::error("Error patching: {}", gpatch.err());
 			}
-
-			patchGroup[jsonPatch["name"]] = jpatch;
-
-			togglePatch(patchGroup, jsonPatch["name"]);
+#endif
+			const std::string name = item["name"].get<std::string>();
+			group.emplace(name, std::move(patch));
+#if !defined(__ANDROID__)
+			JsonPatches::togglePatch(group, name);
+#endif
 		}
 	};
 
-	auto read_or_default = [](const std::string& modsName, nlohmann::json& mods)
-	{
-
-		std::ifstream file(Mod::get()->getResourcesDir() / modsName);
-
-		if (file.peek() == std::ifstream::traits_type::eof())
-		{
-			file.close();
-			std::ofstream file_write(Mod::get()->getResourcesDir() / modsName);
-			file_write << mods;
-			file_write.close();
-		}
-		else
-			file >> mods;
-	};
-
-	nlohmann::json patchesJson = nlohmann::json::object();
-
-	read_or_default("bypass.json", patchesJson);
-	append_patches(JsonPatches::bypass, patchesJson["mods"]);
-	patchesJson = nlohmann::json::object();
-
-	read_or_default("creator.json", patchesJson);
-	append_patches(JsonPatches::creator, patchesJson["mods"]);
-	patchesJson = nlohmann::json::object();
-
-	read_or_default("global.json", patchesJson);
-	append_patches(JsonPatches::global, patchesJson["mods"]);
-	patchesJson = nlohmann::json::object();
-
-	read_or_default("level.json", patchesJson);
-	append_patches(JsonPatches::level, patchesJson["mods"]);
-	patchesJson = nlohmann::json::object();
-
-	read_or_default("player.json", patchesJson);
-	append_patches(JsonPatches::player, patchesJson["mods"]);
-	patchesJson = nlohmann::json::object();
-
-	// read_or_default("variables.json", patchesJson);
-	// append_patches(JsonPatches::variables, patchesJson["mods"]);
+	load_group("hacks/bypass.json", JsonPatches::bypass);
+	load_group("hacks/creator.json", JsonPatches::creator);
+	load_group("hacks/global.json", JsonPatches::global);
+	load_group("hacks/level.json", JsonPatches::level);
+	load_group("hacks/player.json", JsonPatches::player);
 }
 
 void JsonPatches::togglePatch(JsonPatches::patch_group_type& patchGroup, const std::string& name)
 {
-	auto patches = patchGroup.at(name).patches;
+	auto found = patchGroup.find(name);
+	if (found == patchGroup.end() || found->second.patches.empty())
+		return;
+	auto patches = found->second.patches;
 
 	if (Settings::get<bool>("patch/" + name, false))
 	{
@@ -122,9 +115,17 @@ void JsonPatches::drawFromPatches(JsonPatches::patch_group_type& patchGroup)
 {
 	for (const auto& [name, jpatch] : patchGroup)
 	{
+#if defined(__ANDROID__)
+		// Show the real patch entries, but do not present desktop opcode patches
+		// as working Android toggles. Their addresses are not valid on Android.
+		ImGui::BeginDisabled();
+		GUI::checkbox(name, "patch/" + name, false);
+		ImGui::EndDisabled();
+		GUI::tooltip(jpatch.description + "\nUnavailable on Android: this option uses desktop-specific memory addresses.");
+#else
 		if (GUI::checkbox(name, "patch/" + name, false))
 			togglePatch(patchGroup, name);
-
 		GUI::tooltip(jpatch.description);
+#endif
 	}
 }
