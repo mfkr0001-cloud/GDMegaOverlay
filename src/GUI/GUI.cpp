@@ -95,14 +95,23 @@ ImVec2 GUI::getJsonPosition(const std::string& name)
         windowPositions[name]["y"] = .0f;
     }
 
-    auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
+#if defined(__ANDROID__)
+    // Saved Android window coordinates are normalized against ImGui's logical
+    // display size (the same coordinate space used by Window::visibleInScreen).
+    auto winSize = cocos2d::CCSize(
+        ImGui::GetIO().DisplaySize.x,
+        ImGui::GetIO().DisplaySize.y
+    );
+#else
+    auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect().size;
+#endif
 
     if (windowPositions[name]["x"] > 1 || windowPositions[name]["y"] > 1)
-        winSize.size = cocos2d::CCSize(1.f, 1.f);
+        winSize = cocos2d::CCSize(1.f, 1.f);
 
     return {
-        windowPositions[name]["x"].get<float>() * winSize.size.width,
-        windowPositions[name]["y"].get<float>() * winSize.size.height
+        windowPositions[name]["x"].get<float>() * winSize.width,
+        windowPositions[name]["y"].get<float>() * winSize.height
     };
 }
 
@@ -120,14 +129,21 @@ ImVec2 GUI::getJsonSize(const std::string& name, ImVec2 defaultSize)
         windowPositions[name]["h"] = defaultSize.y;
     }
 
-    auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
+#if defined(__ANDROID__)
+    auto winSize = cocos2d::CCSize(
+        ImGui::GetIO().DisplaySize.x,
+        ImGui::GetIO().DisplaySize.y
+    );
+#else
+    auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect().size;
+#endif
 
     if (windowPositions[name]["w"] > 1 || windowPositions[name]["h"] > 1)
-        winSize.size = cocos2d::CCSize(1.f, 1.f);
+        winSize = cocos2d::CCSize(1.f, 1.f);
 
     return {
-        windowPositions[name]["w"].get<float>() * winSize.size.width,
-        windowPositions[name]["h"].get<float>() * winSize.size.height
+        windowPositions[name]["w"].get<float>() * winSize.width,
+        windowPositions[name]["h"].get<float>() * winSize.height
     };
 }
 
