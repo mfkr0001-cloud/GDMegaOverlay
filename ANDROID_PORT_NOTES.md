@@ -40,3 +40,11 @@ Do not treat this development branch as a tested release until the GitHub Action
 ## Release blockers
 
 This source snapshot has not been compiled against the Geode SDK in this environment because `GEODE_SDK` and Android NDK toolchains are not installed here. The Android touch bridge is a source-level implementation and has not been verified on a device. Therefore this archive is a release-candidate preparation, **not a verified release build**. Do not publish the draft until CI passes and the package is installed and tested on Geometry Dash 2.2081 + Geode Android ARM64.
+
+
+## Android global overlay and patch list correction (revision 4)
+
+- The floating overlay toggle is now attached to each running `CCScene`, rather than only `MenuLayer` and `PauseLayer`. This covers scene transitions into level browsing/search and gameplay.
+- Bypass and Creator definitions are loaded from `res/hacks/*.json` on Android so their real entries remain visible. Their desktop opcode toggles are shown disabled with an explanation because those memory addresses are not valid on Android.
+- The default Android layout now arranges all primary windows in a six-column, two-row grid. The layout revision is bumped so an old saved layout is refreshed once; the user's settings and patch preferences are not erased.
+- Android UI scale remains `0.42f`.
