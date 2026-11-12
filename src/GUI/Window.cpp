@@ -5,6 +5,7 @@
 #include "Blur.h"
 
 #include <imgui_internal.h>
+#include <algorithm>
 
 #include <Geode/Geode.hpp>
 
@@ -42,6 +43,23 @@ bool Window::visibleInScreen() {
 }
 
 void Window::draw() {
+#if defined(__ANDROID__)
+    // Older saved layouts may contain desktop pixel coordinates. Keep the two
+    // tabs reachable on Android without touching any other window geometry.
+    if (name == "Bypass" || name == "Creator") {
+        const ImVec2 screen = ImGui::GetIO().DisplaySize;
+        if (screen.x > 0.f && screen.y > 0.f) {
+            const float maxX = std::max(0.f, screen.x - std::max(120.f, size.x));
+            const float maxY = std::max(0.f, screen.y - std::max(100.f, size.y));
+            if (renderPosition.x < 0.f || renderPosition.x > screen.x ||
+                renderPosition.y < 0.f || renderPosition.y > screen.y) {
+                renderPosition.x = std::clamp(renderPosition.x, 0.f, maxX);
+                renderPosition.y = std::clamp(renderPosition.y, 0.f, maxY);
+                position = renderPosition;
+            }
+        }
+    }
+#endif
     if (GUI::isVisible && visibleInScreen()) {
         if (maxSize.x != 0 && maxSize.y != 0) {
             const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
