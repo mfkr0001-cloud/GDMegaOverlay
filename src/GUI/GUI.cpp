@@ -533,9 +533,10 @@ void GUI::loadStyle(const std::filesystem::path& name)
 
 void GUI::setFont(const std::filesystem::path& font)
 {
+    // Reduce only the text size; keep window dimensions and widget spacing unchanged.
     ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(
         font.string().c_str(),
-        fontScale * uiSizeFactor
+        fontScale * uiSizeFactor * 0.65f
     );
 
     if (fnt)
