@@ -74,7 +74,11 @@ void Window::draw() {
         if (Settings::get<bool>("menu/box_shadow/enabled", true))
             dropShadow(Settings::get<float>("menu/box_shadow/size", 24.f), 255);
 
-        ImGui::SetWindowFontScale(Settings::get<float>("menu/ui_scale", 1.f));
+        // Keep function labels compact inside the narrow Android columns.
+        // UI Scale still works as before, with an additional 20% text reduction.
+        ImGui::SetWindowFontScale(
+            Settings::get<float>("menu/ui_scale", 1.f) * 0.80f
+        );
 
         if (ImGui::IsMouseDragging(0, 0.1f) &&
             (ImGui::IsWindowFocused() ||
