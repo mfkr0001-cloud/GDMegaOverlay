@@ -553,7 +553,7 @@ void initGUI()
 	GUI::Window variablesWindow("Variables", [] { JsonPatches::drawFromPatches(JsonPatches::variables); });
 	// GUI::addWindow(variablesWindow);
 
-	GUI::Window macrobot("Macrobot", Macrobot::drawWindow);
+	GUI::Window macrobot("Macro Bot", Macrobot::drawWindow);
 	macrobot.position = {50, 350};
 	macrobot.size.y = 260;
 	GUI::addWindow(macrobot);
@@ -572,6 +572,32 @@ void initGUI()
 	recorder.position = {800, 280};
 	recorder.size.y = 450;
 	GUI::addWindow(recorder);
+
+	GUI::Window recordingWindow("Recording", [] {
+#if defined(__ANDROID__)
+		ImGui::TextDisabled("Video recording is not implemented on Android in this build.");
+		ImGui::TextWrapped("Android screen capture requires a MediaProjection permission flow and a native encoder/output bridge. This project currently has neither, so no video file is created.");
+		ImGui::BeginDisabled();
+		GUI::button("Start Recording");
+		ImGui::SameLine();
+		GUI::button("Stop Recording");
+		ImGui::EndDisabled();
+		ImGui::Text("Status: Unavailable on Android");
+		if (GUI::button("Open recordings folder"))
+			ImGui::OpenPopup("Recording folder unavailable");
+		GUI::modalPopup("Recording folder unavailable", [] {
+			ImGui::TextWrapped("No Android recording output folder exists because video capture is not implemented.");
+		});
+#else
+		ImGui::TextWrapped("Use the Recorder tab to configure and start a render. Recording output is handled by the existing desktop FFmpeg pipeline.");
+		if (GUI::button("Open Recorder tab"))
+			GUI::windowReferences["Recorder"]->enabled = true;
+		ImGui::Text("Status: See Recorder tab");
+#endif
+	});
+	recordingWindow.position = {1050, 700};
+	recordingWindow.size.y = 180;
+	GUI::addWindow(recordingWindow);
 
 	GUI::Window styleEditor("Style Editor", [] {
 		GUI::drawStyleEditor();
