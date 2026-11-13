@@ -4,6 +4,7 @@
 #include "../Settings.hpp"
 #include <filesystem>
 #include <fstream>
+#include <unordered_set>
 #include <imgui.h>
 
 #include <Geode/Geode.hpp>
@@ -124,13 +125,39 @@ void JsonPatches::togglePatch(JsonPatches::patch_group_type& patchGroup, const s
 	togglePatch(patchGroup, name);
 }
 
+#if defined(__ANDROID__)
+namespace
+{
+	// Keep in sync with the hooks in hacks/AndroidHacks.cpp.
+	const std::unordered_set<std::string> androidImplemented{
+		"Text Length",
+		"Character Filter",
+		"Treasure Room",
+		"Main Levels",
+		"Checkpoint Limit Bypass",
+		"No Death Effect",
+		"No Respawn Blink",
+		"No Spider Dash",
+		"No Robot Fire",
+	};
+}
+#endif
+
 void JsonPatches::drawFromPatches(JsonPatches::patch_group_type& patchGroup)
 {
 	for (const auto& [name, jpatch] : patchGroup)
 	{
 #if defined(__ANDROID__)
-		// Show the real patch entries, but do not present desktop opcode patches
-		// as working Android toggles. Their addresses are not valid on Android.
+		// Entries with a hook-based Android implementation (hacks/AndroidHacks.cpp)
+		// are real toggles. The rest keep their desktop opcode patches, whose
+		// addresses are not valid on Android, so they are shown disabled.
+		if (androidImplemented.contains(name))
+		{
+			GUI::checkbox(name, "patch/" + name, false);
+			GUI::tooltip(jpatch.description);
+			continue;
+		}
+
 		ImGui::BeginDisabled();
 		GUI::checkbox(name, "patch/" + name, false);
 		ImGui::EndDisabled();
