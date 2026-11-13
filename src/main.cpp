@@ -573,23 +573,6 @@ void initGUI()
 	recorder.size.y = 450;
 	GUI::addWindow(recorder);
 
-	GUI::Window recordingWindow("Recording", [] {
-#if defined(__ANDROID__)
-		ImGui::TextWrapped("Android video render: load a macro, start playback in a level, then press Start Recording in the Recorder tab. The result is an .mp4 (video only, no sound yet) in the mod's renders folder.");
-		if (GUI::button("Open Recorder tab"))
-			GUI::windowReferences["Recorder"]->enabled = true;
-		ImGui::Text("Status: %s", Record::recorder.m_status.empty() ? "Idle" : Record::recorder.m_status.c_str());
-#else
-		ImGui::TextWrapped("Use the Recorder tab to configure and start a render. Recording output is handled by the existing desktop FFmpeg pipeline.");
-		if (GUI::button("Open Recorder tab"))
-			GUI::windowReferences["Recorder"]->enabled = true;
-		ImGui::Text("Status: See Recorder tab");
-#endif
-	});
-	recordingWindow.position = {1050, 700};
-	recordingWindow.size.y = 180;
-	GUI::addWindow(recordingWindow);
-
 	GUI::Window styleEditor("Style Editor", [] {
 		GUI::drawStyleEditor();
 	});
