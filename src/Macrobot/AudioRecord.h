@@ -1,7 +1,8 @@
 #pragma once
 
-// Desktop-only audio capture helper. Android recording currently produces
-// video only and does not compile or call this FMOD output-switching code.
+// Audio capture helper. The class is declared on every platform so that any
+// translation unit can include this header safely. On desktop it switches FMOD
+// to the WAV writer; on Android it is a no-op (Android recording is video only).
 class AudioRecord
 {
 public:
