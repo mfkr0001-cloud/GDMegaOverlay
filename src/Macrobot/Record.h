@@ -7,8 +7,12 @@
 #include <vector>
 #include <string>
 
+#include <memory>
+
 #if !defined(__ANDROID__)
 #include <subprocess.hpp>
+#else
+#include "AndroidEncoder.h"
 #endif
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
@@ -24,6 +28,11 @@ public:
     int m_old_fbo, m_old_rbo;
     unsigned m_fbo;
     CCTexture2D* m_texture;
+
+    // Android: plain OpenGL ES render target (colour texture + depth/stencil).
+    unsigned m_gl_texture = 0;
+    unsigned m_gl_depth = 0;
+    unsigned m_gl_stencil = 0;
 
     void begin();
     void end();
@@ -69,6 +78,14 @@ public:
 
     float tfx = 0;
 
+    // Human readable state shown in the Recorder window.
+    std::string m_status;
+    unsigned m_frames_written = 0;
+
+#if defined(__ANDROID__)
+    std::unique_ptr<AndroidVideoEncoder> m_encoder;
+#endif
+
     int sampleRate = 0;
     int numChannels = 0;
     int sampleFormat = 0;
@@ -77,7 +94,8 @@ public:
     void stop();
     void start_audio();
     void stop_audio();
-    void capture_frame();
+    // `copies` > 1 repeats the captured frame (used when the device renders slower than the video fps).
+    void capture_frame(int copies = 1);
 
     void handle_recording(GJBaseGameLayer*, float dt);
     void handle_recording_audio(GJBaseGameLayer*, float dt);
