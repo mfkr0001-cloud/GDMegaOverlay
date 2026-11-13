@@ -36,6 +36,7 @@ namespace GUI
         ImVec2 size = ImVec2(220, 120);
         ImVec2 minSize = ImVec2(200, 120);
         ImVec2 maxSize = ImVec2(200, 2000);
+        float textScale = 1.0f;
 
     public:
         Window(
