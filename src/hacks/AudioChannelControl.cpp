@@ -26,28 +26,41 @@ void AudioChannelControl::set(float frequency)
 {
 	speed = frequency;
 
-	FMOD::Channel* audioChannel;
+	auto* engine = FMODAudioEngine::sharedEngine();
+	if (!engine || !engine->m_system)
+		return;
 
 	for(int i = 0; i < 2; i++)
 	{
-		
-		FMODAudioEngine::sharedEngine()->m_system->getChannel(126 + i, &audioChannel);
-		if (audioChannel)
-		{
-			FMOD::Sound* sound;
-			audioChannel->getCurrentSound(&sound);
-			float freq;
-			sound->getDefaults(&freq, nullptr);
-			audioChannel->setFrequency(freq * frequency);
-		}
+		FMOD::Channel* audioChannel = nullptr;
+
+		if (engine->m_system->getChannel(126 + i, &audioChannel) != FMOD_OK || !audioChannel)
+			continue;
+
+		// Канал может существовать, но ничего не играть: sound будет nullptr.
+		FMOD::Sound* sound = nullptr;
+		if (audioChannel->getCurrentSound(&sound) != FMOD_OK || !sound)
+			continue;
+
+		float freq = 0.f;
+		if (sound->getDefaults(&freq, nullptr) != FMOD_OK || freq <= 0.f)
+			continue;
+
+		audioChannel->setFrequency(freq * frequency);
 	}
 }
 
 void AudioChannelControl::setPitch(float pitch)
 {
-	auto system = FMODAudioEngine::sharedEngine()->m_system;
-	FMOD::ChannelGroup* group;
-	system->getMasterChannelGroup(&group);
+	auto* engine = FMODAudioEngine::sharedEngine();
+	if (!engine || !engine->m_system)
+		return;
+
+	auto system = engine->m_system;
+	FMOD::ChannelGroup* group = nullptr;
+
+	if (system->getMasterChannelGroup(&group) != FMOD_OK || !group)
+		return;
 
 	static FMOD::DSP* pitchShifter = nullptr;
 
@@ -57,11 +70,16 @@ void AudioChannelControl::setPitch(float pitch)
 		pitchShifter->release();
 		pitchShifter = nullptr;
 	}
-	
+
 	if (pitch == 1.f)
 		return;
-	
-	system->createDSPByType(FMOD_DSP_TYPE_PITCHSHIFT, &pitchShifter);
+
+	if (system->createDSPByType(FMOD_DSP_TYPE_PITCHSHIFT, &pitchShifter) != FMOD_OK || !pitchShifter)
+	{
+		pitchShifter = nullptr;
+		return;
+	}
+
 	pitchShifter->setParameterFloat(FMOD_DSP_PITCHSHIFT_FFTSIZE, 4096);
 	pitchShifter->setParameterFloat(FMOD_DSP_PITCHSHIFT_PITCH, pitch);
 	group->addDSP(0, pitchShifter);
