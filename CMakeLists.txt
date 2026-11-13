@@ -49,6 +49,11 @@ CPMAddPackage("gh:matcool/gd-imgui-cocos#geode")
 
 target_link_libraries(${PROJECT_NAME} imgui-cocos)
 
+# Android video renderer uses the NDK media codec/muxer (AMediaCodec, AMediaMuxer).
+if(ANDROID)
+  target_link_libraries(${PROJECT_NAME} mediandk)
+endif()
+
 setup_geode_mod(${PROJECT_NAME})
 
 include(cmake/git.cmake)
