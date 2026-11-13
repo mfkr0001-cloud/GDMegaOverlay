@@ -575,19 +575,10 @@ void initGUI()
 
 	GUI::Window recordingWindow("Recording", [] {
 #if defined(__ANDROID__)
-		ImGui::TextDisabled("Video recording is not implemented on Android in this build.");
-		ImGui::TextWrapped("Android screen capture requires a MediaProjection permission flow and a native encoder/output bridge. This project currently has neither, so no video file is created.");
-		ImGui::BeginDisabled();
-		GUI::button("Start Recording");
-		ImGui::SameLine();
-		GUI::button("Stop Recording");
-		ImGui::EndDisabled();
-		ImGui::Text("Status: Unavailable on Android");
-		if (GUI::button("Open recordings folder"))
-			ImGui::OpenPopup("Recording folder unavailable");
-		GUI::modalPopup("Recording folder unavailable", [] {
-			ImGui::TextWrapped("No Android recording output folder exists because video capture is not implemented.");
-		});
+		ImGui::TextWrapped("Android video render: load a macro, start playback in a level, then press Start Recording in the Recorder tab. The result is an .mp4 (video only, no sound yet) in the mod's renders folder.");
+		if (GUI::button("Open Recorder tab"))
+			GUI::windowReferences["Recorder"]->enabled = true;
+		ImGui::Text("Status: %s", Record::recorder.m_status.empty() ? "Idle" : Record::recorder.m_status.c_str());
 #else
 		ImGui::TextWrapped("Use the Recorder tab to configure and start a render. Recording output is handled by the existing desktop FFmpeg pipeline.");
 		if (GUI::button("Open Recorder tab"))
