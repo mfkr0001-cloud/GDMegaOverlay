@@ -48,3 +48,10 @@ This source snapshot has not been compiled against the Geode SDK in this environ
 - Bypass and Creator definitions are loaded from `res/hacks/*.json` on Android so their real entries remain visible. Their desktop opcode toggles are shown disabled with an explanation because those memory addresses are not valid on Android.
 - The default Android layout now arranges all primary windows in a six-column, two-row grid. The layout revision is bumped so an old saved layout is refreshed once; the user's settings and patch preferences are not erased.
 - Android UI scale remains `0.42f`.
+
+
+## Practice-mode macros and Android video renderer (revision 5)
+
+- Macro Bot: practice-mode checkpoints are supported. Each checkpoint remembers the macro frame it was created at; respawning at a checkpoint rewinds the frame counter and drops inputs recorded after it instead of wiping the macro. Known limitation: the Android frame counter still counts `GJBaseGameLayer::update` calls, not physics steps, so macros can drift if the frame rate differs between recording and playback.
+- Recorder: an Android renderer now exists (`src/Macrobot/AndroidEncoder.*`, `Record.cpp`). It replays the loaded macro, draws `PlayLayer` into an OpenGL ES framebuffer, reads the pixels back and encodes H.264 into an `.mp4` with the NDK `AMediaCodec`/`AMediaMuxer` (no Java, no MediaProjection, no FFmpeg). Output goes to `renders/` in the mod's save folder.
+- Recorder limitations: video only (no audio track yet); frame size is rounded to a multiple of 16; shader effects may render at the wrong resolution because the desktop `glViewport` hook is not used on Android; not yet verified on a physical device.
