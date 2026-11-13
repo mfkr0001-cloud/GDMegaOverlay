@@ -137,6 +137,10 @@ namespace Macrobot
 	inline Macro macro;
 
 	inline std::unordered_map<void*, Macrobot::CheckpointData> checkpoints;
+#if defined(__ANDROID__)
+	// Macro frame at which each practice-mode checkpoint was created (keyed by CheckpointObject*).
+	inline std::unordered_map<void*, uint32_t> androidCheckpointFrames;
+#endif
 	inline std::unordered_map<std::string, Macro> macroList;
 
 	inline std::string macroName;
