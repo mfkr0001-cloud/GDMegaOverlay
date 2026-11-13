@@ -6,7 +6,9 @@
 #include "../hacks/ShowTrajectory.h"
 
 #include "../util.hpp"
+#if !defined(__ANDROID__)
 #include "AudioRecord.h"
+#endif
 #include "../Settings.hpp"
 
 #include <fstream>
@@ -187,9 +189,9 @@ class $modify(PlayLayer)
         {
             // Respawned at a checkpoint: make sure no button stays held from the
             // lost attempt by recording a release at the checkpoint frame.
-            Macrobot::recordAction(PlayerButton::Jump, currentFrame, false, true);
+            recordAction(PlayerButton::Jump, currentFrame, false, true);
             if (this->m_levelSettings->m_twoPlayerMode)
-                Macrobot::recordAction(PlayerButton::Jump, currentFrame, false, false);
+                recordAction(PlayerButton::Jump, currentFrame, false, false);
         }
         return;
 #else
