@@ -55,6 +55,10 @@ class $modify(PlayLayer)
         labels.clear();
         bool res = PlayLayer::init(p0, p1, p2);
 
+        // Do not create HUD labels when the base PlayLayer failed to initialize.
+        if (!res)
+            return false;
+
         setupLabel(
             "Cheat Indicator",
             [&](cocos2d::CCLabelBMFont* pointer) {
