@@ -20,6 +20,12 @@ namespace GUI
 
         std::function<void()> windowFunction;
 
+        // Android: прокрутка содержимого окна перетаскиванием пальца.
+        bool touchScrollCandidate = false;
+        bool touchScrolling = false;
+
+        void handleTouchScroll();
+
     public:
         bool enabled = true;
 
