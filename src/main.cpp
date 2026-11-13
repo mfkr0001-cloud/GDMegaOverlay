@@ -369,7 +369,8 @@ void initGUI()
                 if (GUI::inputFloat2("Size W/H", wh, 80.f, 4000.f, 60.f, 4000.f)) {
                     edited.size = ImVec2(wh[0], wh[1]);
                 }
-                GUI::inputFloat("Text Scale", &GUI::fontScale, 10.0f, 40.0f);
+                if (GUI::inputFloat("Text Scale", &edited.textScale, 0.55f, 2.0f))
+                    edited.textScale = ImClamp(edited.textScale, 0.55f, 2.0f);
                 if (GUI::button("Save Layout")) GUI::save();
                 GUI::sameLine();
                 if (GUI::button("Reset Layout")) GUI::resetDefault();
