@@ -73,6 +73,7 @@ class $modify(PlayLayer)
         checkpoints.clear();
 #endif
 #if defined(__ANDROID__)
+        androidCheckpointFrames.clear();
         stopAndroidPlayback();
 #endif
         playerMode = DISABLED;
@@ -84,6 +85,50 @@ class $modify(PlayLayer)
         botInput = false;
         PlayLayer::onExit();
     }
+
+#if defined(__ANDROID__)
+    // Practice mode: when the game respawns the player at a checkpoint, the macro
+    // must continue from the checkpoint's frame instead of being wiped. The game
+    // itself restores the player state; we only keep our frame counter and the
+    // recorded inputs in sync with it.
+    void loadFromCheckpoint(CheckpointObject* checkpoint)
+    {
+        const auto found = androidCheckpointFrames.find(checkpoint);
+        if (playerMode == DISABLED || found == androidCheckpointFrames.end())
+        {
+            // Unknown checkpoint (or bot off): behave like a normal reset.
+            resetFromStart = true;
+            PlayLayer::loadFromCheckpoint(checkpoint);
+            return;
+        }
+
+        resetFromStart = false;
+        const uint32_t checkpointFrame = found->second;
+
+        PlayLayer::loadFromCheckpoint(checkpoint);
+
+        currentFrame = checkpointFrame;
+        if (playerMode == RECORDING)
+        {
+            // Drop everything recorded after the checkpoint (the attempt we just lost).
+            macro.inputs.erase(
+                std::remove_if(macro.inputs.begin(), macro.inputs.end(),
+                    [checkpointFrame](const Action& action) { return action.frame > checkpointFrame; }),
+                macro.inputs.end());
+            recordingHeld1.clear();
+            recordingHeld2.clear();
+        }
+        else
+        {
+            // Playback: continue with the first input at or after this frame.
+            actionIndex = 0;
+            while (actionIndex < macro.inputs.size() && macro.inputs[actionIndex].frame < checkpointFrame)
+                ++actionIndex;
+            playbackHeld1.clear();
+            playbackHeld2.clear();
+        }
+    }
+#endif
 
 #if !defined(__ANDROID__)
     void loadFromCheckpoint(CheckpointObject* checkpoint)
@@ -113,18 +158,38 @@ class $modify(PlayLayer)
     void resetLevel()
     {
 #if defined(__ANDROID__)
+        // loadFromCheckpoint (hooked above) clears this flag when the game
+        // respawns at a practice checkpoint during resetLevel.
+        resetFromStart = true;
         PlayLayer::resetLevel();
-        currentFrame = 0;
-        actionIndex = 0;
-        if (playerMode == RECORDING)
+
+        if (resetFromStart)
         {
-            macro.inputs.clear();
-            macro.framerate = std::max(1.f, Common::getTPS());
-            if (auto* level = PlayLayer::get() ? PlayLayer::get()->m_level : nullptr)
+            currentFrame = 0;
+            actionIndex = 0;
+            androidCheckpointFrames.clear();
+            playbackHeld1.clear();
+            playbackHeld2.clear();
+            recordingHeld1.clear();
+            recordingHeld2.clear();
+            if (playerMode == RECORDING)
             {
-                macro.levelInfo.id = level->m_levelID.value();
-                macro.levelInfo.name = level->m_levelName;
+                macro.inputs.clear();
+                macro.framerate = std::max(1.f, Common::getTPS());
+                if (auto* level = PlayLayer::get() ? PlayLayer::get()->m_level : nullptr)
+                {
+                    macro.levelInfo.id = level->m_levelID.value();
+                    macro.levelInfo.name = level->m_levelName;
+                }
             }
+        }
+        else if (playerMode == RECORDING)
+        {
+            // Respawned at a checkpoint: make sure no button stays held from the
+            // lost attempt by recording a release at the checkpoint frame.
+            recordAction(PlayerButton::Jump, currentFrame, false, true);
+            if (this->m_levelSettings->m_twoPlayerMode)
+                recordAction(PlayerButton::Jump, currentFrame, false, false);
         }
         return;
 #else
@@ -316,6 +381,22 @@ class $modify(GJBaseGameLayer)
 		GJBaseGameLayer::handleButton(down, button, player1);
 	}
 };
+
+#if defined(__ANDROID__)
+class $modify(CheckpointObject)
+{
+	bool init()
+	{
+		const bool res = CheckpointObject::init();
+
+		// Remember the macro frame at which each checkpoint was created.
+		if (playerMode != DISABLED && PlayLayer::get() && currentFrame > 0)
+			androidCheckpointFrames[this] = currentFrame;
+
+		return res;
+	}
+};
+#endif // __ANDROID__
 
 #if !defined(__ANDROID__)
 class $modify(CheckpointObject)
