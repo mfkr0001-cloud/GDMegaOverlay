@@ -359,6 +359,7 @@ void GUI::addWindow(Window window)
     {
         window.position = getJsonPosition(window.name);
         window.size = getJsonSize(window.name, window.size);
+        window.textScale = windowPositions[window.name].value("textScale", 0.82f);
     }
     else
     {
@@ -419,6 +420,7 @@ void GUI::save()
             windowPositions[w.name]["y"] = (float)w.position.y / saveScreen.y;
             windowPositions[w.name]["w"] = (float)w.size.x / saveScreen.x;
             windowPositions[w.name]["h"] = (float)w.size.y / saveScreen.y;
+            windowPositions[w.name]["textScale"] = w.textScale;
         }
     }
 
@@ -539,6 +541,7 @@ void GUI::resetDefault()
     {
         window.position = getJsonPosition(window.name);
         window.size = getJsonSize(window.name, window.size);
+        window.textScale = windowPositions[window.name].value("textScale", 0.82f);
 
 #if defined(__ANDROID__)
         window.renderPosition = window.position;
