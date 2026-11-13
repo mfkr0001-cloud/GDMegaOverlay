@@ -328,8 +328,34 @@ void Window::draw() {
         windowFunction();
     }
 
-    if (GUI::isVisible && visibleInScreen())
+    if (GUI::isVisible && visibleInScreen()) {
+#if defined(__ANDROID__)
+        // Высота окна подгоняется под содержимое: без пустого места снизу.
+        // Если содержимое длиннее экрана - окно упирается в низ экрана
+        // и дальше листается пальцем.
+        {
+            const ImVec2 screen = androidScreenSize();
+
+            if (screen.y > 100.f) {
+                const float contentH =
+                    ImGui::GetCursorPosY() +
+                    ImGui::GetStyle().WindowPadding.y;
+
+                const float maxH = std::max(
+                    80.f,
+                    screen.y - position.y - 4.f
+                );
+
+                const float targetH = std::min(contentH, maxH);
+
+                if (targetH > 20.f && std::fabs(targetH - size.y) > 2.f)
+                    size.y = targetH;
+            }
+        }
+#endif
+
         ImGui::End();
+    }
 }
 
 // Adapted from Dear ImGui window title bar implementation.
