@@ -9,6 +9,10 @@
 #include "Macrobot.h"
 #include "portable-file-dialogs.h"
 
+#include <algorithm>
+#include <cctype>
+#include <ctime>
+
 #include <Geode/cocos/platform/CCGL.h>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/modify/PlayLayer.hpp>
@@ -137,7 +141,75 @@ void Recorder::start_audio()
 void Recorder::start()
 {
 #if defined(__ANDROID__)
-    return;
+    auto* playLayer = PlayLayer::get();
+    if (!playLayer || m_recording)
+        return;
+
+    levelDone = false;
+
+    // Keep the screen's aspect ratio so the level is not stretched.
+    float aspect = 16.f / 9.f;
+    if (auto* view = CCDirector::sharedDirector()->getOpenGLView())
+    {
+        const CCSize frame = view->getFrameSize();
+        if (frame.width > 0.f && frame.height > 0.f)
+            aspect = frame.width / frame.height;
+    }
+
+    int height = std::clamp(Settings::get<int>("recorder/android/height", 720), 144, 2160);
+    int width = static_cast<int>(height * aspect + 0.5f);
+    width = std::max(16, (width / 16) * 16);
+    height = std::max(16, (height / 16) * 16);
+
+    const int fps = std::clamp(Settings::get<int>("recorder/fps", 60), 15, 120);
+    const int bitrateMbps = std::clamp(Settings::get<int>("recorder/android/bitrate", 8), 1, 100);
+
+    std::string name = playLayer->m_level->m_levelName.c_str();
+    for (auto& c : name)
+        if (!std::isalnum(static_cast<unsigned char>(c)))
+            c = '_';
+    if (name.empty())
+        name = "level";
+
+    const auto outputPath = Mod::get()->getSaveDir() / "renders" /
+        (name + "_" + std::to_string(playLayer->m_level->m_levelID.value()) + "_" + std::to_string(std::time(nullptr)) + ".mp4");
+    renderPath = outputPath.string();
+
+    m_encoder = std::make_unique<AndroidVideoEncoder>();
+    if (!m_encoder->begin(renderPath, width, height, fps, bitrateMbps * 1000000))
+    {
+        m_status = "Cannot start encoder: " + m_encoder->error();
+        Common::showWithPriority(FLAlertLayer::create("Error", m_status.c_str(), "Ok"));
+        m_encoder.reset();
+        return;
+    }
+
+    m_width = m_encoder->width();
+    m_height = m_encoder->height();
+    m_fps = fps;
+
+    m_current_frame.assign(static_cast<size_t>(m_width) * m_height * 4, 0);
+    m_frame_has_data = false;
+    m_finished_level = false;
+    m_last_frame_t = m_extra_t = 0;
+    m_frames_written = 0;
+    tfx = 0;
+    m_after_end_extra_time = 0.f;
+    m_after_end_duration = Settings::get<float>("recorder/after_end", 3.4f);
+
+    m_renderer.m_width = m_width;
+    m_renderer.m_height = m_height;
+    m_renderer.begin();
+
+    m_recording = true;
+    m_status = "Rendering " + std::to_string(m_width) + "x" + std::to_string(m_height) + " @ " + std::to_string(m_fps) + " fps...";
+
+    if (playLayer->getChildByID("EndLevelLayer"))
+        playLayer->getChildByID("EndLevelLayer")->removeFromParent();
+
+    playLayer->stopAllActions();
+    playLayer->startGame();
+    playLayer->resetLevelFromStart();
 #else
     levelDone = false;
 
@@ -273,8 +345,26 @@ void Recorder::start()
 
 void Recorder::stop()
 {
+#if defined(__ANDROID__)
+    if (!m_recording)
+        return;
+
+    m_recording = false;
+    m_renderer.end();
+
+    if (m_encoder)
+    {
+        const auto frames = m_encoder->framesWritten();
+        if (m_encoder->finish())
+            m_status = "Saved " + std::to_string(frames) + " frames: " + renderPath;
+        else
+            m_status = "Render failed: " + m_encoder->error();
+        m_encoder.reset();
+    }
+#else
     m_renderer.end();
     m_recording = false;
+#endif
 }
 
 #if !defined(__ANDROID__)
@@ -331,18 +421,128 @@ void MyRenderTexture::end()
     m_texture->release();
 }
 #else
-void MyRenderTexture::begin() {}
-void MyRenderTexture::capture(std::mutex&, std::vector<u8>&, volatile bool&) {}
-void MyRenderTexture::end() {}
+void MyRenderTexture::begin()
+{
+    GLint oldFbo = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFbo);
+    m_old_fbo = oldFbo;
+
+    glGenTextures(1, &m_gl_texture);
+    glBindTexture(GL_TEXTURE_2D, m_gl_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &m_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_gl_texture, 0);
+
+    glGenRenderbuffers(1, &m_gl_depth);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_gl_depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, m_width, m_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_gl_depth);
+
+    // The game clips some nodes with the stencil buffer, so try to provide one.
+    glGenRenderbuffers(1, &m_gl_stencil);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_gl_stencil);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, m_width, m_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_gl_stencil);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        // Some GPUs reject separate depth + stencil attachments: drop the stencil.
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+        glDeleteRenderbuffers(1, &m_gl_stencil);
+        m_gl_stencil = 0;
+    }
+
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(m_old_fbo));
+}
+
+void MyRenderTexture::capture(std::mutex&, std::vector<u8>& data, volatile bool&)
+{
+    auto* director = CCDirector::sharedDirector();
+    auto* playLayer = PlayLayer::get();
+    if (!playLayer || m_fbo == 0)
+        return;
+
+    GLint previousFbo = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glViewport(0, 0, m_width, m_height);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    visiting = true;
+    playLayer->visit();
+    visiting = false;
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(previousFbo));
+    director->setViewport();
+}
+
+void MyRenderTexture::end()
+{
+    if (m_fbo)
+    {
+        glDeleteFramebuffers(1, &m_fbo);
+        m_fbo = 0;
+    }
+    if (m_gl_texture)
+    {
+        glDeleteTextures(1, &m_gl_texture);
+        m_gl_texture = 0;
+    }
+    if (m_gl_depth)
+    {
+        glDeleteRenderbuffers(1, &m_gl_depth);
+        m_gl_depth = 0;
+    }
+    if (m_gl_stencil)
+    {
+        glDeleteRenderbuffers(1, &m_gl_stencil);
+        m_gl_stencil = 0;
+    }
+}
 #endif
 
-void Recorder::capture_frame()
+void Recorder::capture_frame(int copies)
 {
+#if defined(__ANDROID__)
+    if (!m_encoder)
+        return;
+
+    // Rendering and encoding are synchronous on Android: no worker thread needed.
+    m_renderer.capture(m_lock, m_current_frame, m_frame_has_data);
+    m_frame_has_data = false;
+
+    for (int i = 0; i < std::max(1, copies); ++i)
+    {
+        if (!m_encoder->addFrame(m_current_frame.data()))
+        {
+            const std::string error = m_encoder->error();
+            stop();
+            m_status = "Render failed: " + (error.empty() ? std::string("encoder error") : error);
+            return;
+        }
+        ++m_frames_written;
+    }
+#else
+    (void)copies;
     while (m_frame_has_data)
     {
     }
 
     m_renderer.capture(m_lock, m_current_frame, m_frame_has_data);
+#endif
 }
 
 void Recorder::stop_audio()
@@ -459,15 +659,94 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 #else
 void Recorder::handle_recording(GJBaseGameLayer* play_layer, float dt)
 {
-    (void)play_layer;
-    (void)dt;
+    if (!levelDone || m_after_end_extra_time < m_after_end_duration)
+    {
+        if (levelDone)
+        {
+            m_after_end_extra_time += dt;
+            m_finished_level = true;
+        }
+
+        tfx += dt;
+
+        // Time scale of the level (speed portals / slow motion), so the video keeps constant game time per frame.
+        float timewarp = play_layer->m_gameState.m_timeWarp;
+        if (timewarp <= 0.f)
+            timewarp = 1.f;
+
+        const double frameDt = 1.0 / static_cast<double>(m_fps) * timewarp;
+        const double time = tfx + m_extra_t - m_last_frame_t;
+
+        if (time >= frameDt)
+        {
+            // If the device is slower than the video fps, repeat the frame so the video keeps its real speed.
+            const int copies = std::clamp(static_cast<int>(time / frameDt), 1, 8);
+            m_extra_t = time - frameDt * copies;
+            m_last_frame_t = tfx;
+            capture_frame(copies);
+        }
+    }
+    else
+    {
+        stop();
+        Common::showWithPriority(FLAlertLayer::create("Info", "Macro rendered successfully!\nVideo only (no sound yet).", "Ok"));
+    }
 }
 #endif
 
 void Record::drawWindow()
 {
 #if defined(__ANDROID__)
-    ImGui::TextDisabled("Recorder is unavailable on Android in this port; desktop FFmpeg/viewport hooks are not enabled.");
+    if (recorder.m_recording)
+    {
+        ImGui::TextColored(ImVec4(1.f, 0.35f, 0.25f, 1.f), "Rendering... %u frames", recorder.m_frames_written);
+        if (GUI::button("Stop Recording##android-render"))
+            recorder.stop();
+    }
+    else
+    {
+        const bool disabled = !PlayLayer::get() || Macrobot::macro.inputs.empty() || Macrobot::playerMode != Macrobot::PLAYBACK;
+
+        if (disabled)
+            ImGui::BeginDisabled();
+
+        if (GUI::button("Start Recording##android-render"))
+            recorder.start();
+
+        if (disabled)
+        {
+            GUI::tooltip("Load a macro and start playback inside a level first.");
+            ImGui::EndDisabled();
+        }
+    }
+
+    int height = Settings::get<int>("recorder/android/height", 720);
+    GUI::inputInt("Video height", &height);
+    if (ImGui::IsItemDeactivatedAfterEdit())
+        Mod::get()->setSavedValue<int>("recorder/android/height", std::clamp(height, 144, 2160));
+    GUI::tooltip("Width follows the screen aspect ratio. Sizes are rounded to a multiple of 16.");
+
+    int framerate = Settings::get<int>("recorder/fps", 60);
+    GUI::inputInt("Framerate", &framerate);
+    if (ImGui::IsItemDeactivatedAfterEdit())
+        Mod::get()->setSavedValue<int>("recorder/fps", std::clamp(framerate, 15, 120));
+
+    int bitrate = Settings::get<int>("recorder/android/bitrate", 8);
+    GUI::inputInt("Bitrate (Mbps)", &bitrate);
+    if (ImGui::IsItemDeactivatedAfterEdit())
+        Mod::get()->setSavedValue<int>("recorder/android/bitrate", std::clamp(bitrate, 1, 100));
+
+    float afterEnd = Settings::get<float>("recorder/after_end", 3.4f);
+    GUI::inputFloat("Show End For", &afterEnd);
+    if (ImGui::IsItemDeactivatedAfterEdit())
+        Mod::get()->setSavedValue<float>("recorder/after_end", afterEnd);
+
+    if (!recorder.m_status.empty())
+        ImGui::TextWrapped("%s", recorder.m_status.c_str());
+
+    GUI::marker("[INFO]",
+        "Android renderer: replays the loaded macro and encodes an H.264 .mp4 on the device "
+        "(video only, no sound yet). Files are saved in the mod's renders folder.");
     return;
 #else
     if (recorder.m_recording || recorder.m_recording_audio)
