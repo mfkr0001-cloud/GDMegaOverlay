@@ -128,9 +128,11 @@ void Window::handleTouchScroll() {
 
     if (ImGui::IsMouseClicked(0)) {
         // Касание началось в этом окне (и не в открытом попапе поверх него).
-        touchScrollCandidate = ImGui::IsWindowHovered(
-            ImGuiHoveredFlags_ChildWindows
-        );
+        const ImVec2 mouse = ImGui::GetMousePos();
+        const ImVec2 windowPos = ImGui::GetWindowPos();
+        const float titleBottom = windowPos.y + ImGui::GetFrameHeight();
+        touchScrollCandidate = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+            mouse.y > titleBottom;
         touchScrolling = false;
     }
 
@@ -174,187 +176,72 @@ bool Window::visibleInScreen() {
 
 void Window::draw() {
 #if defined(__ANDROID__)
-    // Проверяем только позицию и корректность размера.
-    // Принудительного уменьшения окон больше нет.
     fitWindowToScreen(*this);
 #endif
 
-    if (GUI::isVisible && visibleInScreen()) {
+    if (!GUI::isVisible || !visibleInScreen())
+        return;
 
-#if !defined(__ANDROID__)
-        if (maxSize.x != 0 && maxSize.y != 0) {
-            const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-
-            const float minWidth = displaySize.x * 0.098f;
-            const float maxWidth = displaySize.x * 0.112f;
-
-            ImGui::SetNextWindowSizeConstraints(
-                {minWidth, minSize.y * GUI::uiSizeFactor},
-                {maxWidth, maxSize.y * GUI::uiSizeFactor}
-            );
-        }
-#endif
-
-        bool blurEnabled = Settings::get<bool>(
-            "menu/blur/enabled",
-            false
-        );
-
-        bool blurGD = Settings::get<bool>(
-            "menu/blur/gd",
-            false
-        );
-
-        float windowTransparency = Settings::get<float>(
-            "menu/window/opacity",
-            0.98f
-        );
-
-        float blurDarkness = Settings::get<float>(
-            "menu/blur/darkness",
-            1.f
-        );
-
-        if (blurEnabled)
-            ImGui::SetNextWindowBgAlpha(
-                blurGD ? (blurDarkness - 0.1f) : 1.f
-            );
-        else
-            ImGui::SetNextWindowBgAlpha(windowTransparency);
-
+    const ImVec2 screen = ImGui::GetIO().DisplaySize;
 #if defined(__ANDROID__)
-        // Окна нельзя перетаскивать: палец нужен для прокрутки содержимого.
-        ImGui::Begin(
-            name.c_str(),
-            nullptr,
-            flags | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-        );
-#else
-        ImGui::Begin(name.c_str(), nullptr, flags);
+    // Keep every panel usable on small screens, but let the user resize it.
+    const float minW = std::min(115.f, std::max(80.f, screen.x - 8.f));
+    const float minH = std::min(90.f, std::max(60.f, screen.y - 8.f));
+    const float maxW = std::max(minW, screen.x - 4.f);
+    const float maxH = std::max(minH, screen.y - 4.f);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(minW, minH), ImVec2(maxW, maxH));
 #endif
 
-        if (Settings::get<bool>(
-            "menu/title_gradient/enabled",
-            true
-        )) {
+    ImGui::SetNextWindowPos(renderPosition, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+
+    const bool blurEnabled = Settings::get<bool>("menu/blur/enabled", false);
+    const bool blurGD = Settings::get<bool>("menu/blur/gd", false);
+    const float windowTransparency = Settings::get<float>("menu/window/opacity", 0.98f);
+    const float blurDarkness = Settings::get<float>("menu/blur/darkness", 1.f);
+
+    ImGui::SetNextWindowBgAlpha(
+        blurEnabled ? (blurGD ? (blurDarkness - 0.1f) : 1.f) : windowTransparency
+    );
+
+    // Android supports touch dragging on the title bar and resizing from the
+    // lower-right grip. Content itself remains vertically scrollable.
+    bool contentsVisible = ImGui::Begin(name.c_str(), nullptr, flags);
+
+    if (contentsVisible) {
+        if (Settings::get<bool>("menu/title_gradient/enabled", true))
             customTitlebar();
-        }
 
         if (blurEnabled && !blurGD)
             Blur::blurWindowBackground();
 
-        if (Settings::get<bool>(
-            "menu/box_shadow/enabled",
-            true
-        )) {
-            dropShadow(
-                Settings::get<float>(
-                    "menu/box_shadow/size",
-                    24.f
-                ),
-                255
-            );
-        }
+        if (Settings::get<bool>("menu/box_shadow/enabled", true))
+            dropShadow(Settings::get<float>("menu/box_shadow/size", 24.f), 255);
 
-        // Масштаб текста управляется настройкой UI Scale.
-        ImGui::SetWindowFontScale(
-            Settings::get<float>("menu/ui_scale", 1.f)
-        );
+        const float globalScale = Settings::get<float>("menu/ui_scale", 1.f);
+        ImGui::SetWindowFontScale(std::clamp(textScale * globalScale, 0.55f, 2.0f));
 
 #if defined(__ANDROID__)
         handleTouchScroll();
 #endif
 
-#if !defined(__ANDROID__)
-        // На Android перемещение и изменение размера окон отключены.
-        if (
-            ImGui::IsMouseDragging(0, 0.1f) &&
-            (
-                ImGui::IsWindowFocused() ||
-                ImGui::IsMouseHoveringRect(
-                    ImGui::GetWindowPos(),
-                    ImGui::GetWindowPos() + ImGui::GetWindowSize()
-                )
-            )
-        ) {
-            position = ImGui::GetWindowPos();
-            size = ImGui::GetWindowSize();
-
-            int snap = Settings::get<int>(
-                "menu/window/snap",
-                10
-            );
-
-            if (snap > 1) {
-                position = {
-                    roundSnap(position.x, snap),
-                    roundSnap(position.y, snap)
-                };
-            }
-
-            int sizeSnap = Settings::get<int>(
-                "menu/window/size_snap",
-                10
-            );
-
-            if (sizeSnap > 1) {
-                size = {
-                    roundSnap(size.x, sizeSnap),
-                    roundSnap(size.y, sizeSnap)
-                };
-            }
-
-#if defined(__ANDROID__)
-            // После перемещения удерживаем окно на экране,
-            // но не меняем его заданный размер.
-            fitWindowToScreen(*this);
-#endif
-
-            renderPosition = position;
-
-            GUI::setJsonPosition(name, position);
-            GUI::setJsonSize(name, size);
-        }
-#endif
-
-        ImGui::SetWindowSize(size);
-        ImGui::SetWindowPos(renderPosition);
-    }
-
-    if (
-        (GUI::isVisible && visibleInScreen()) ||
-        !GUI::isVisible
-    ) {
         windowFunction();
     }
 
-    if (GUI::isVisible && visibleInScreen()) {
+    // Capture geometry before End(), because End() restores the parent window.
+    const ImVec2 actualPos = ImGui::GetWindowPos();
+    const ImVec2 actualSize = ImGui::GetWindowSize();
+
+    // Always close a successfully begun ImGui window, even when collapsed.
+    ImGui::End();
+    if (std::isfinite(actualPos.x) && std::isfinite(actualPos.y) &&
+        std::isfinite(actualSize.x) && std::isfinite(actualSize.y)) {
+        position = actualPos;
+        renderPosition = actualPos;
+        size = actualSize;
 #if defined(__ANDROID__)
-        // Высота окна подгоняется под содержимое: без пустого места снизу.
-        // Если содержимое длиннее экрана - окно упирается в низ экрана
-        // и дальше листается пальцем.
-        {
-            const ImVec2 screen = androidScreenSize();
-
-            if (screen.y > 100.f) {
-                const float contentH =
-                    ImGui::GetCursorPosY() +
-                    ImGui::GetStyle().WindowPadding.y;
-
-                const float maxH = std::max(
-                    80.f,
-                    screen.y - position.y - 4.f
-                );
-
-                const float targetH = std::min(contentH, maxH);
-
-                if (targetH > 20.f && std::fabs(targetH - size.y) > 2.f)
-                    size.y = targetH;
-            }
-        }
+        fitWindowToScreen(*this);
 #endif
-
-        ImGui::End();
     }
 }
 
