@@ -187,9 +187,9 @@ class $modify(PlayLayer)
         {
             // Respawned at a checkpoint: make sure no button stays held from the
             // lost attempt by recording a release at the checkpoint frame.
-            recordAction(PlayerButton::Jump, currentFrame, false, true);
+            Macrobot::recordAction(PlayerButton::Jump, currentFrame, false, true);
             if (this->m_levelSettings->m_twoPlayerMode)
-                recordAction(PlayerButton::Jump, currentFrame, false, false);
+                Macrobot::recordAction(PlayerButton::Jump, currentFrame, false, false);
         }
         return;
 #else
