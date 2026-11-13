@@ -6,9 +6,7 @@
 #include "../hacks/ShowTrajectory.h"
 
 #include "../util.hpp"
-#if !defined(__ANDROID__)
 #include "AudioRecord.h"
-#endif
 #include "../Settings.hpp"
 
 #include <fstream>
