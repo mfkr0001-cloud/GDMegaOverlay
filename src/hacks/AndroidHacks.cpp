@@ -29,7 +29,9 @@ namespace
 {
     bool hackOn(const char* name)
     {
-        return Settings::get<bool>(std::string("patch/") + name, false);
+        // peek, а не get: хуки вызываются очень часто, и они не должны
+        // создавать записи в сохранениях во время игры.
+        return Settings::peek<bool>(std::string("patch/") + name, false);
     }
 }
 
@@ -111,7 +113,8 @@ class $modify(AndroidCheckpointLimitPlayLayer, PlayLayer)
 {
     void storeCheckpoint(CheckpointObject* checkpoint)
     {
-        if (!hackOn("Checkpoint Limit Bypass"))
+        if (!hackOn("Checkpoint Limit Bypass") || !checkpoint || !m_checkpointArray ||
+            !checkpoint->m_physicalCheckpointObject)
             return PlayLayer::storeCheckpoint(checkpoint);
 
         // The original removes the oldest checkpoint after the 50th; skip that.
