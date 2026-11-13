@@ -26,6 +26,18 @@ namespace Settings
 		}
 	}
 
+	// Только чтение: ничего не записывает в контейнер сохранений.
+	// Безопасно вызывать из горячих хуков игры (каждый кадр / не из главного потока).
+	template<typename T>
+	T peek(const std::string_view name, const T& default_value = impl::get_default<T>())
+	{
+		auto& container = Mod::get()->getSaveContainer();
+		if (!container.contains(name))
+			return default_value;
+
+		return Mod::get()->getSavedValue<T>(name, default_value);
+	}
+
 	template<typename T>
 	T get(const std::string_view name, const T& default_value = impl::get_default<T>())
 	{
