@@ -5,9 +5,7 @@
 #include "../GUI/GUI.h"
 #include "../Settings.hpp"
 
-#if !defined(__ANDROID__)
 #include "AudioRecord.h"
-#endif
 #include "Macrobot.h"
 #include "portable-file-dialogs.h"
 
@@ -178,6 +176,10 @@ void Recorder::start()
     const auto outputPath = Mod::get()->getSaveDir() / "renders" /
         (name + "_" + std::to_string(playLayer->m_level->m_levelID.value()) + "_" + std::to_string(std::time(nullptr)) + ".mp4");
     renderPath = outputPath.string();
+
+    // The encoder opens the file with open(2), which does not create directories.
+    std::error_code dirError;
+    std::filesystem::create_directories(outputPath.parent_path(), dirError);
 
     m_encoder = std::make_unique<AndroidVideoEncoder>();
     if (!m_encoder->begin(renderPath, width, height, fps, bitrateMbps * 1000000))
