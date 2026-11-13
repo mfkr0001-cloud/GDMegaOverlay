@@ -19,6 +19,12 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Show built commit and Android encoder declarations
+        shell: bash
+        run: |
+          git log -1 --format='Building %H %s'
+          grep -rn "class AndroidVideoEncoder\|class AudioRecord" src
+
       - name: Build with current stable Geode SDK
         id: build
         uses: geode-sdk/build-geode-mod@main
