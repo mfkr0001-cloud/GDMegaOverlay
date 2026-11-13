@@ -5,7 +5,9 @@
 #include "../GUI/GUI.h"
 #include "../Settings.hpp"
 
+#if !defined(__ANDROID__)
 #include "AudioRecord.h"
+#endif
 #include "Macrobot.h"
 #include "portable-file-dialogs.h"
 
@@ -95,8 +97,10 @@ class $modify(GJBaseGameLayer)
         if (recorder.m_recording)
             recorder.handle_recording(this, dt);
 
+#if !defined(__ANDROID__)
         if (recorder.m_recording_audio)
             recorder.handle_recording_audio(this, dt);
+#endif
 
         GJBaseGameLayer::update(dt);
     }
@@ -579,6 +583,7 @@ void Recorder::stop_audio()
 #endif
 }
 
+#if !defined(__ANDROID__)
 void Recorder::handle_recording_audio(GJBaseGameLayer *play_layer, float dt)
 {
     if (!levelDone || m_after_end_extra_time < m_after_end_duration)
@@ -598,6 +603,7 @@ void Recorder::handle_recording_audio(GJBaseGameLayer *play_layer, float dt)
             stop_audio();
     }
 }
+#endif
 
 #if !defined(__ANDROID__)
 void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
