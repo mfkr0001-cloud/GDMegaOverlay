@@ -121,6 +121,47 @@ void Window::addFlag(ImGuiWindowFlags flag) {
     flags |= flag;
 }
 
+// Прокрутка содержимого окна пальцем (вертикально).
+// Вызывать между ImGui::Begin и ImGui::End.
+void Window::handleTouchScroll() {
+    ImGuiIO& io = ImGui::GetIO();
+
+    if (ImGui::IsMouseClicked(0)) {
+        // Касание началось в этом окне (и не в открытом попапе поверх него).
+        touchScrollCandidate = ImGui::IsWindowHovered(
+            ImGuiHoveredFlags_ChildWindows
+        );
+        touchScrolling = false;
+    }
+
+    if (!ImGui::IsMouseDown(0)) {
+        touchScrollCandidate = false;
+        touchScrolling = false;
+        return;
+    }
+
+    if (!touchScrollCandidate)
+        return;
+
+    if (!touchScrolling) {
+        const ImVec2 d = ImGui::GetMouseDragDelta(0, 0.f);
+        const float threshold = std::max(6.f, ImGui::GetFontSize() * 0.5f);
+
+        // Начинаем скролл только при явном вертикальном движении,
+        // чтобы не мешать слайдерам и обычным нажатиям.
+        if (std::fabs(d.y) > threshold && std::fabs(d.y) > std::fabs(d.x)) {
+            touchScrolling = true;
+
+            // Отменяем нажатие на чекбокс/кнопку под пальцем,
+            // иначе при отпускании функция включится случайно.
+            ImGui::ClearActiveID();
+        }
+    }
+
+    if (touchScrolling)
+        ImGui::SetScrollY(ImGui::GetScrollY() - io.MouseDelta.y);
+}
+
 bool Window::visibleInScreen() {
     ImVec2 screenSize = ImGui::GetIO().DisplaySize;
     ImVec2 windowSize = size;
@@ -181,7 +222,16 @@ void Window::draw() {
         else
             ImGui::SetNextWindowBgAlpha(windowTransparency);
 
+#if defined(__ANDROID__)
+        // Окна нельзя перетаскивать: палец нужен для прокрутки содержимого.
+        ImGui::Begin(
+            name.c_str(),
+            nullptr,
+            flags | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+        );
+#else
         ImGui::Begin(name.c_str(), nullptr, flags);
+#endif
 
         if (Settings::get<bool>(
             "menu/title_gradient/enabled",
@@ -211,6 +261,12 @@ void Window::draw() {
             Settings::get<float>("menu/ui_scale", 1.f)
         );
 
+#if defined(__ANDROID__)
+        handleTouchScroll();
+#endif
+
+#if !defined(__ANDROID__)
+        // На Android перемещение и изменение размера окон отключены.
         if (
             ImGui::IsMouseDragging(0, 0.1f) &&
             (
@@ -259,6 +315,7 @@ void Window::draw() {
             GUI::setJsonPosition(name, position);
             GUI::setJsonSize(name, size);
         }
+#endif
 
         ImGui::SetWindowSize(size);
         ImGui::SetWindowPos(renderPosition);
