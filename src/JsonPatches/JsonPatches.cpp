@@ -2,6 +2,7 @@
 #include "../GUI/GUI.h"
 #include "../util.hpp"
 #include "../Settings.hpp"
+#include <filesystem>
 #include <fstream>
 #include <imgui.h>
 
@@ -16,10 +17,22 @@ void JsonPatches::init()
 	// original opcode addresses are desktop-only and must never be applied there.
 	auto load_group = [](const std::string& relativePath, JsonPatches::patch_group_type& group)
 	{
-		const auto filePath = Mod::get()->getResourcesDir() / relativePath;
-		std::ifstream file(filePath);
+		// Geode copies every file listed in mod.json "resources.files" flat into the
+		// mod's resources directory (the subfolders of res/ are not kept), exactly
+		// like Style.style or default_windows.json. So bypass.json ends up as
+		// <resources>/bypass.json, not <resources>/hacks/bypass.json. Try the flat
+		// location first and keep the nested path as a fallback.
+		const auto resourcesDir = Mod::get()->getResourcesDir();
+		const auto flatPath = resourcesDir / std::filesystem::path(relativePath).filename();
+		const auto nestedPath = resourcesDir / relativePath;
+
+		std::ifstream file(flatPath);
 		if (!file.is_open()) {
-			log::error("GDMegaOverlay: unable to open patch definitions: {}", filePath.string());
+			file.clear();
+			file.open(nestedPath);
+		}
+		if (!file.is_open()) {
+			log::error("GDMegaOverlay: unable to open patch definitions: {} (also tried {})", flatPath.string(), nestedPath.string());
 			return;
 		}
 
