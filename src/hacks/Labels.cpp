@@ -49,7 +49,8 @@ Labels::Label Labels::setupLabel(
 
 class $modify(PlayLayer)
 {
-    bool init(GJGameLevel* p0, bool p1, bool p2)
+    #if !defined(__ANDROID__)
+bool init(GJGameLevel* p0, bool p1, bool p2)
     {
         levelCompleted = false;
         labels.clear();
@@ -253,6 +254,7 @@ class $modify(PlayLayer)
 
         return res;
     }
+#endif
 
     void destroyPlayer(PlayerObject* player, GameObject* object)
     {
