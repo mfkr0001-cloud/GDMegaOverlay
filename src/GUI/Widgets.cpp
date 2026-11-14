@@ -304,7 +304,13 @@ void GUI::arrowButton(const std::string& popupName)
 
 	float ww = ImGui::GetWindowSize().x;
 
+#if defined(__ANDROID__)
+	// Sized in font units (desktop layout is designed around a 16 px font),
+	// so the arrow keeps its place however small or large the text is.
+	GUI::sameLine(ww - (39.f * ImGui::GetFontSize() / 16.f));
+#else
 	GUI::sameLine(ww - (39 * GUI::uiSizeFactor));
+#endif
 
 	if (ImGui::ArrowButton(
 		(popupName + "arrow").c_str(),
@@ -767,7 +773,13 @@ void GUI::pushItemWidth(float width)
 	if (!GUI::shouldRender())
 		return;
 
+#if defined(__ANDROID__)
+	// Desktop widths are written for a 16 px font; scale them with the real
+	// font size so number fields still fit their text on Android.
+	ImGui::PushItemWidth(width * ImGui::GetFontSize() / 16.f);
+#else
 	ImGui::PushItemWidth(width * GUI::uiSizeFactor);
+#endif
 }
 
 void GUI::popItemWidth()
