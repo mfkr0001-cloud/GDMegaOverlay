@@ -6,7 +6,8 @@
 
 class $modify(PlayLayer)
 {
-	bool init(GJGameLevel* p0, bool p1, bool p2)
+	#if !defined(__ANDROID__)
+bool init(GJGameLevel* p0, bool p1, bool p2)
 	{
 		// A level pointer should normally be valid here, but never dereference it
 		// without checking. Keep the original timestamp for later tickrate work.
@@ -14,6 +15,7 @@ class $modify(PlayLayer)
 
 		return PlayLayer::init(p0, p1, p2);
 	}
+#endif
 
 	void resetLevel()
 	{
