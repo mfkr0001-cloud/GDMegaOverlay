@@ -95,6 +95,14 @@ void JsonPatches::init()
 	load_group("hacks/global.json", JsonPatches::global);
 	load_group("hacks/level.json", JsonPatches::level);
 	load_group("hacks/player.json", JsonPatches::player);
+
+#if defined(__ANDROID__)
+	// The Android Bypass hooks in this source snapshot are intentionally not
+	// enabled/verified. Clear any stale desktop or test-build toggle values so
+	// they cannot be treated as active after an update.
+	for (const auto& [name, patch] : JsonPatches::bypass)
+		Mod::get()->setSavedValue<bool>("patch/" + name, false);
+#endif
 }
 
 void JsonPatches::togglePatch(JsonPatches::patch_group_type& patchGroup, const std::string& name)
@@ -126,29 +134,24 @@ void JsonPatches::togglePatch(JsonPatches::patch_group_type& patchGroup, const s
 }
 
 #if defined(__ANDROID__)
-namespace
-{
-    // No Android Bypass hook in this snapshot has been runtime-verified.
-    // Keep this set empty until each ARM64 hook is tested on GD 2.2081.
-    const std::unordered_set<std::string> androidImplemented{};
-}
+// No Bypass option is exposed as active on Android until its ARM64 hook has
+// been individually validated on-device. Desktop opcode addresses are never
+// safe to apply to the Android binary.
 #endif
+
 
 void JsonPatches::drawFromPatches(JsonPatches::patch_group_type& patchGroup)
 {
 	for (const auto& [name, jpatch] : patchGroup)
 	{
 #if defined(__ANDROID__)
-        // Desktop opcode patches are not valid on Android. Until verified
-        // ARM64 hooks exist, expose Bypass entries as unavailable and clear
-        // stale enabled values left by previous experimental builds.
-        if (&patchGroup == &JsonPatches::bypass)
-            Mod::get()->setSavedValue<bool>("patch/" + name, false);
-
-        ImGui::BeginDisabled();
-        GUI::checkbox(name, "patch/" + name, false);
-        ImGui::EndDisabled();
-        GUI::tooltip(jpatch.description + "\nUnavailable on Android: ARM64 implementation is not verified yet.");
+		// Keep every Bypass control visibly unavailable on Android for now.
+		// The crash report shows PlayLayer::init failing while this port's
+		// Android-specific bypass implementation is not yet runtime-verified.
+		ImGui::BeginDisabled();
+		GUI::checkbox(name, "patch/" + name, false);
+		ImGui::EndDisabled();
+		GUI::tooltip(jpatch.description + "\nTemporarily unavailable on Android pending ARM64 runtime validation.");
 #else
 		if (GUI::checkbox(name, "patch/" + name, false))
 			togglePatch(patchGroup, name);
