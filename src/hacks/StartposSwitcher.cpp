@@ -104,13 +104,15 @@ class $modify(CCKeyboardDispatcher) {
 };
 
 class $modify(PlayLayer) {
-    bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
+    #if !defined(__ANDROID__)
+bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
         removeSwitcherUI();
         startposObjects.clear();
         index = -1;
 
         return PlayLayer::init(level, useReplay, dontCreateObjects);
     }
+#endif
 
     void addObject(GameObject* object) {
         PlayLayer::addObject(object);
