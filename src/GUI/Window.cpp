@@ -222,6 +222,13 @@ void Window::draw() {
         ImGui::SetWindowFontScale(std::clamp(textScale * globalScale, 0.55f, 2.0f));
 
 #if defined(__ANDROID__)
+        // A desktop panel is about 12.6 font heights wide (0.105 of 1920 px at a
+        // 16 px font). Keep that proportion on Android, otherwise labels get cut
+        // off whenever the text is large compared to the screen-relative width.
+        const float minPanelWidth = ImGui::GetFontSize() * 13.f;
+        if (ImGui::GetWindowWidth() < minPanelWidth)
+            ImGui::SetWindowSize(ImVec2(minPanelWidth, ImGui::GetWindowHeight()));
+
         handleTouchScroll();
 #endif
 
