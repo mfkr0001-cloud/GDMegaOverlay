@@ -238,13 +238,25 @@ void Window::draw() {
     // Capture geometry before End(), because End() restores the parent window.
     const ImVec2 actualPos = ImGui::GetWindowPos();
     const ImVec2 actualSize = ImGui::GetWindowSize();
+    const bool userMovedWindow =
+        std::fabs(actualPos.x - renderPosition.x) > 0.5f ||
+        std::fabs(actualPos.y - renderPosition.y) > 0.5f;
 
     // Always close a successfully begun ImGui window, even when collapsed.
     ImGui::End();
     if (std::isfinite(actualPos.x) && std::isfinite(actualPos.y) &&
         std::isfinite(actualSize.x) && std::isfinite(actualSize.y)) {
-        position = actualPos;
-        renderPosition = actualPos;
+        // renderPosition is also used by the open/close animation. Do not copy
+        // its temporary off-screen animation coordinates into the persistent
+        // position, otherwise every close changes the saved window position.
+        // Only a real user drag may change the persistent position.
+        if (userMovedWindow) {
+            position = actualPos;
+            renderPosition = actualPos;
+        }
+
+        // Keep the actual size so the user's resize survives the next frame
+        // and is included in GUI::save().
         size = actualSize;
 #if defined(__ANDROID__)
         fitWindowToScreen(*this);
