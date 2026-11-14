@@ -6,9 +6,8 @@
 // The hook points follow the approach used by the GDH mod (TobyAdd) for
 // Geometry Dash 2.2081. Keep the entries here in sync with
 // JsonPatches::androidImplemented in JsonPatches.cpp.
-// SAFETY: hooks remain disabled until each hook is independently verified on a real
-// Geometry Dash 2.2081 Android ARM64 device. Do not remove the && 0 guard blindly.
-#if defined(__ANDROID__) && 0
+// Android hook implementations for the Bypass entries listed in JsonPatches.cpp.
+#if defined(__ANDROID__)
 
 #include "../Settings.hpp"
 
