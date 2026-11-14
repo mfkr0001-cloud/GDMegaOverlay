@@ -109,7 +109,8 @@ void setupStartPos(StartPosObject* startPos)
 
 class $modify(PlayLayer)
 {
-    bool init(GJGameLevel* level, bool unk1, bool unk2)
+    #if !defined(__ANDROID__)
+bool init(GJGameLevel* level, bool unk1, bool unk2)
     {
         dualPortals.clear();
         gamemodePortals.clear();
@@ -120,6 +121,7 @@ class $modify(PlayLayer)
 
         return PlayLayer::init(level, unk1, unk2);
     }
+#endif
 
     void resetLevel()
     {
