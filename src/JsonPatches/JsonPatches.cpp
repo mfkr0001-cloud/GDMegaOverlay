@@ -128,18 +128,9 @@ void JsonPatches::togglePatch(JsonPatches::patch_group_type& patchGroup, const s
 #if defined(__ANDROID__)
 namespace
 {
-	// Keep in sync with the hooks in hacks/AndroidHacks.cpp.
-	const std::unordered_set<std::string> androidImplemented{
-		"Text Length",
-		"Character Filter",
-		"Treasure Room",
-		"Main Levels",
-		"Checkpoint Limit Bypass",
-		"No Death Effect",
-		"No Respawn Blink",
-		"No Spider Dash",
-		"No Robot Fire",
-	};
+    // No Android Bypass hook in this snapshot has been runtime-verified.
+    // Keep this set empty until each ARM64 hook is tested on GD 2.2081.
+    const std::unordered_set<std::string> androidImplemented{};
 }
 #endif
 
@@ -148,20 +139,16 @@ void JsonPatches::drawFromPatches(JsonPatches::patch_group_type& patchGroup)
 	for (const auto& [name, jpatch] : patchGroup)
 	{
 #if defined(__ANDROID__)
-		// Entries with a hook-based Android implementation (hacks/AndroidHacks.cpp)
-		// are real toggles. The rest keep their desktop opcode patches, whose
-		// addresses are not valid on Android, so they are shown disabled.
-		if (androidImplemented.contains(name))
-		{
-			GUI::checkbox(name, "patch/" + name, false);
-			GUI::tooltip(jpatch.description);
-			continue;
-		}
+        // Desktop opcode patches are not valid on Android. Until verified
+        // ARM64 hooks exist, expose Bypass entries as unavailable and clear
+        // stale enabled values left by previous experimental builds.
+        if (&patchGroup == &JsonPatches::bypass)
+            Mod::get()->setSavedValue<bool>("patch/" + name, false);
 
-		ImGui::BeginDisabled();
-		GUI::checkbox(name, "patch/" + name, false);
-		ImGui::EndDisabled();
-		GUI::tooltip(jpatch.description + "\nUnavailable on Android: this option uses desktop-specific memory addresses.");
+        ImGui::BeginDisabled();
+        GUI::checkbox(name, "patch/" + name, false);
+        ImGui::EndDisabled();
+        GUI::tooltip(jpatch.description + "\nUnavailable on Android: ARM64 implementation is not verified yet.");
 #else
 		if (GUI::checkbox(name, "patch/" + name, false))
 			togglePatch(patchGroup, name);
