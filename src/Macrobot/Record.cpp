@@ -69,12 +69,6 @@ class $modify(PlayLayer)
         PlayLayer::onQuit();
     }
 
-    bool init(GJGameLevel* level, bool unk1, bool unk2)
-    {
-        bool res = PlayLayer::init(level, unk1, unk2);
-        return res;
-    }
-
     void levelComplete()
     {
         PlayLayer::levelComplete();
