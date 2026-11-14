@@ -208,9 +208,9 @@ void GUI::init()
     load();
 
 #if defined(__ANDROID__)
-    // Revision 8: restore the original proportional window layout.
-    // The Android-specific 4x3 tiled layout is no longer applied.
-    constexpr int kAndroidLayoutRevision = 8;
+    // Revision 9: reset once after the animation-position persistence fix.
+    // The original normalized default layout remains the single fixed target.
+    constexpr int kAndroidLayoutRevision = 9;
     const int appliedLayoutRevision =
         Mod::get()->getSavedValue<int>("android-layout-revision", 0);
 
@@ -548,8 +548,15 @@ void GUI::resetDefault()
         fitWindowToScreen(window);
 #endif
 
+        // Reset is an explicit user action: cancel any in-flight animation and
+        // make the reset position the persistent and rendered position.
         window.renderPosition = window.position;
     }
+
+    // Persist immediately. Previously the reset only changed RAM state and
+    // could be overwritten by the close animation before the next save.
+    if (!windows.empty())
+        save();
 }
 
 void GUI::saveStyle(const std::filesystem::path& name)
