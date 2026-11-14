@@ -203,6 +203,7 @@ class $modify(GJBaseGameLayer)
 class $modify(PlayLayer)
 {
 
+#if !defined(__ANDROID__)
 bool init(GJGameLevel* level, bool unk1, bool unk2)
 {
     player1 = nullptr;
@@ -213,6 +214,7 @@ bool init(GJGameLevel* level, bool unk1, bool unk2)
     getDrawNode()->setZOrder(this->m_debugDrawNode->getZOrder());
 	return res;
 }
+#endif
 
 void destroyPlayer(PlayerObject *p0, GameObject *p1)
 {
