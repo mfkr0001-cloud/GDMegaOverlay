@@ -6,8 +6,8 @@
 // The hook points follow the approach used by the GDH mod (TobyAdd) for
 // Geometry Dash 2.2081. Keep the entries here in sync with
 // JsonPatches::androidImplemented in JsonPatches.cpp.
-// TEST BUILD: all Android hooks in this file are switched off to find the cause of the crash.
-// Remove "&& 0" to turn them back on.
+// SAFETY: hooks remain disabled until each hook is independently verified on a real
+// Geometry Dash 2.2081 Android ARM64 device. Do not remove the && 0 guard blindly.
 #if defined(__ANDROID__) && 0
 
 #include "../Settings.hpp"
